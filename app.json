@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "time-bank-tsx",
-    "slug": "time-bank-tsx",
+    "name": "time-bank",
+    "slug": "time-bank",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,7 +12,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ilyaskuratovsky.timebank",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,6 +33,11 @@
     "plugins": [
       "expo-font",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6461f6ba-cd4a-4fff-8534-16ad6d892596"
+      }
+    }
   }
 }
