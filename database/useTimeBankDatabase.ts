@@ -43,10 +43,13 @@ export function useTimeBankDatabase(options?: UseBankedTimesOptions) {
   };
 
   const set = async (key: string, value: number): Promise<void> => {
-    await db.runAsync("UPDATE banked_time SET value = ? WHERE key = ?", [
-      value,
-      key,
-    ]);
+    // Ensure the key exists; if not, insert it. If it exists, update it.
+    await db.runAsync(
+      `INSERT INTO banked_time (key, value) 
+       VALUES (?, ?) 
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      [key, value],
+    );
     await reload();
   };
 

@@ -1,24 +1,77 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState, useMemo } from "react";
+import { View, Text, StyleSheet, Button } from "react-native";
 import { formatTime } from "../utils/Utils"; // Import the time formatting utility
 import { useDatabaseContext } from "../database/DatabaseContext";
-import { BankedTimes } from "../database/Types";
 
 interface CurrentBankProps {}
 
 const CurrentBank: React.FC<CurrentBankProps> = ({}) => {
-  const [bankedTime, setBankedTime] = useState(0);
-  const handleUpdate = useCallback((data: BankedTimes) => {
-    setBankedTime(data["_"] ?? 0);
-  }, []); // Empty array means this function reference is stable forever
-  //
-  const { bankedTimes } = useDatabaseContext();
-  const formattedTime = formatTime(bankedTimes["_"] ?? 0);
+  const { bankedTimes, set } = useDatabaseContext();
+  const currentSeconds = bankedTimes["_"] ?? 0;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingSeconds, setEditingSeconds] = useState(currentSeconds);
+
+  const formattedTime = formatTime(currentSeconds);
+  const formattedEditingTime = useMemo(
+    () => formatTime(editingSeconds),
+    [editingSeconds],
+  );
+
+  const clearBankedTime = async () => {
+    await set("_", 0);
+  };
+
+  const startEditing = () => {
+    setEditingSeconds(currentSeconds);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditingSeconds(currentSeconds);
+  };
+
+  const saveEditing = async () => {
+    const clamped = Math.max(0, editingSeconds);
+    await set("_", clamped);
+    setIsEditing(false);
+  };
+
+  const adjustSeconds = (delta: number) => {
+    setEditingSeconds((prev) => Math.max(0, prev + delta));
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Banked Time</Text>
-      <Text style={styles.bankedTimeText}>{formattedTime}</Text>
+      <Text style={styles.bankedTimeText}>
+        {isEditing ? formattedEditingTime : formattedTime}
+      </Text>
+
+      {isEditing ? (
+        <View style={styles.editContainer}>
+          <View style={styles.adjustRow}>
+            <Button title="+" onPress={() => adjustSeconds(60)} />
+            <Button title="-" onPress={() => adjustSeconds(-60)} />
+            <Button title="+" onPress={() => adjustSeconds(1)} />
+            <Button title="-" onPress={() => adjustSeconds(-1)} />
+          </View>
+          <View style={styles.editActions}>
+            <Button title="Cancel" onPress={cancelEditing} color="#6c757d" />
+            <Button title="Save" onPress={saveEditing} color="#007bff" />
+          </View>
+        </View>
+      ) : (
+        <View style={styles.buttonRow}>
+          <View style={styles.buttonWrapper}>
+            <Button title="Clear" onPress={clearBankedTime} color="#d9534f" />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button title="Edit" onPress={startEditing} color="#007bff" />
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -50,6 +103,30 @@ const styles = StyleSheet.create({
     fontSize: 64, // Big font size
     fontWeight: "bold",
     color: "#28a745", // Green color
+  },
+  buttonWrapper: {
+    marginTop: 16,
+    width: "45%",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  editContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  adjustRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 12,
+  },
+  editActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
 });
 
