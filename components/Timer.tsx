@@ -18,16 +18,15 @@ const Timer: React.FC<TimerProps> = ({ bankTime }) => {
 
   const handleStop = (): void => {
     setStatus("stopped");
-    setSeconds(0); // Reset seconds when stopped
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
   };
 
   const handleBankTime = async (): Promise<void> => {
     await bankTime(seconds);
     handleStop();
+  };
+
+  const handleClear = (): void => {
+    setSeconds(0);
   };
 
   useEffect(() => {
@@ -54,25 +53,28 @@ const Timer: React.FC<TimerProps> = ({ bankTime }) => {
     <View style={styles.container}>
       <Text style={styles.timerText}>{formatTime(seconds)}</Text>
       <View style={styles.buttonContainer}>
-        <View style={styles.leftSpacer} />
-        <View style={styles.centerAlignedButtons}>
-          {status === "stopped" && (
-            <Pressable
-              onPress={handleStart}
-              style={[styles.button, styles.startButton]}
-            >
-              <Text style={styles.buttonText}>Start</Text>
-            </Pressable>
-          )}
-          {status === "running" && (
-            <Pressable
-              onPress={handleStop}
-              style={[styles.button, styles.stopButton]}
-            >
-              <Text style={styles.buttonText}>Stop</Text>
-            </Pressable>
-          )}
-        </View>
+        <Pressable
+          onPress={handleClear}
+          style={[styles.button, styles.clearButton]}
+        >
+          <Text style={styles.buttonText}>Clear</Text>
+        </Pressable>
+        {status === "stopped" && (
+          <Pressable
+            onPress={handleStart}
+            style={[styles.button, styles.startButton]}
+          >
+            <Text style={styles.buttonText}>Start</Text>
+          </Pressable>
+        )}
+        {status === "running" && (
+          <Pressable
+            onPress={handleStop}
+            style={[styles.button, styles.stopButton]}
+          >
+            <Text style={styles.buttonText}>Pause</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={handleBankTime}
           style={[styles.button, styles.bankButton]}
@@ -88,7 +90,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     marginVertical: 20,
-    padding: 15,
+    padding: 0,
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
@@ -111,14 +113,19 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 10,
     justifyContent: "space-between",
+    paddingBottom: 15,
   },
   leftSpacer: {
     flex: 1,
   },
   centerAlignedButtons: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: 5,
+    gap: 10,
+    backgroundColor: "blue",
   },
   button: {
     paddingVertical: 12,
@@ -135,12 +142,23 @@ const styles = StyleSheet.create({
   },
   startButton: {
     backgroundColor: "#28a745",
+    minWidth: 80,
   },
   stopButton: {
     backgroundColor: "#dc3545",
+    minWidth: 80,
   },
   bankButton: {
     backgroundColor: "#ffc107",
+    minWidth: 80,
+  },
+  rightButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+  clearButton: {
+    backgroundColor: "#6c757d",
     minWidth: 80,
   },
 });

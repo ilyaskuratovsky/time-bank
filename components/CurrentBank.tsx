@@ -44,7 +44,6 @@ const CurrentBank: React.FC<CurrentBankProps> = ({}) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Banked Time</Text>
       <Text style={styles.bankedTimeText}>
         {isEditing ? formattedEditingTime : formattedTime}
       </Text>
