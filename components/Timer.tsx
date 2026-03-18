@@ -1,57 +1,50 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { formatTime } from "../utils/Utils";
+import { formatTimeMilliseconds } from "../utils/Utils";
 import { useFonts, RobotoMono_500Medium } from "@expo-google-fonts/roboto-mono";
+import { Stopwatch } from "../utils/Stopwatch";
 interface TimerProps {
-  bankTime: (seconds: number) => Promise<void>;
+  bankTime: (milliseconds: number) => Promise<void>;
 }
 
 const Timer: React.FC<TimerProps> = ({ bankTime }) => {
-  const [seconds, setSeconds] = useState<number>(0);
+  const [milliseconds, setMilliseconds] = useState(0);
   const [status, setStatus] = useState<"stopped" | "running">("stopped"); // Status can only be 'stopped' or 'running'
-
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stopwatch = useRef<Stopwatch>(new Stopwatch());
 
   const handleStart = (): void => {
+    stopwatch.current.start();
     setStatus("running");
   };
 
   const handleStop = (): void => {
+    stopwatch.current.pause();
     setStatus("stopped");
   };
 
   const handleBankTime = async (): Promise<void> => {
-    await bankTime(seconds);
+    await bankTime(stopwatch.current.timeElapsedSeconds() ?? 0);
+    stopwatch.current.reset();
     handleStop();
   };
 
   const handleClear = (): void => {
-    setSeconds(0);
+    stopwatch.current.reset();
+    setStatus("stopped");
   };
 
   useEffect(() => {
-    if (status === "running") {
-      intervalRef.current = setInterval(() => {
-        setSeconds((prevSeconds) => prevSeconds + 1);
-      }, 1000);
-    } else if (status === "stopped") {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [status]);
+    intervalRef.current = setInterval(() => {
+      setMilliseconds(() => stopwatch.current.timeElapsedMilliseconds());
+    }, 10);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.timerText}>{formatTime(seconds)}</Text>
+      <Text style={styles.timerText}>
+        {formatTimeMilliseconds(milliseconds)}
+      </Text>
       <View style={styles.buttonContainer}>
         <Pressable
           onPress={handleClear}
