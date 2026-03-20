@@ -1,47 +1,30 @@
-import React from "react";
-import { View, Text, StyleSheet, SafeAreaView } from "react-native";
-import {
-  useSafeAreaInsets,
-  SafeAreaProvider,
-} from "react-native-safe-area-context";
-
-import Timer from "./components/Timer"; // Import the Timer component
-import CurrentBank from "./components/CurrentBank"; // Import the CurrentBank component
-import { useDatabaseContext } from "./database/DatabaseContext";
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Sprint from "./components/Sprint";
+import Stats from "./components/Stats";
+import TabBar from "./components/TabBar";
 
 const Main = () => {
+  const [activeTab, setActiveTab] = useState("sprint");
   const insets = useSafeAreaInsets();
-  const db = useDatabaseContext();
+
   return (
     <View
       style={{
         flex: 1,
-        // Manually padding the top and bottom based on the device
         paddingTop: insets.top,
-        paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        alignItems: "center",
-        justifyContent: "center",
       }}
     >
-      <View style={styles.timerContainer}>
-        <Timer
-          bankTime={async (seconds: number) => {
-            db.add("_", seconds);
-          }}
-        />
+      <View style={{ flex: 1 }}>
+        {activeTab === "sprint" && <Sprint />}
+        {activeTab === "stats" && <Stats />}
       </View>
-      <View style={styles.currentBankContainer}>
-        <CurrentBank />
-      </View>
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  timerContainer: { width: "90%" },
-  currentBankContainer: { width: "90%", flex: 1 },
-});
 
 export default Main;
