@@ -6,7 +6,10 @@ import { useDatabaseContext } from "../database/DatabaseContext";
 interface CurrentBankProps {}
 
 const CurrentBank: React.FC<CurrentBankProps> = ({}) => {
-  const { bankedTimes, set } = useDatabaseContext();
+  const {
+    timeBankDatabase: { bankedTimes, set },
+  } = useDatabaseContext();
+  //const { bankedTimes, set } = useDatabaseContext();
   const currentSeconds = bankedTimes["_"] ?? 0;
 
   const [isEditing, setIsEditing] = useState(false);

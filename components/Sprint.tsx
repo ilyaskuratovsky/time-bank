@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Timer from "./Timer";
@@ -8,7 +8,7 @@ import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
 
 const Sprint: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const db = useDatabaseContext();
+  const { timeBankDatabase: db } = useDatabaseContext();
   const projects = [
     {
       id: "1",
@@ -21,6 +21,7 @@ const Sprint: React.FC = () => {
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
+  useEffect(() => {});
 
   return (
     <View

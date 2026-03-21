@@ -4,12 +4,14 @@ import { BankedTimes } from "./Types";
 
 // Define the shape of our Context
 interface DatabaseContextType {
-  bankedTimes: BankedTimes;
-  add: (key: string, value: number) => Promise<void>;
-  set: (key: string, value: number) => Promise<void>;
-  remove: (key: string) => Promise<void>;
-  reload: () => Promise<void>;
-  get: (key: string) => number;
+  timeBankDatabase: {
+    bankedTimes: BankedTimes;
+    add: (key: string, value: number) => Promise<void>;
+    set: (key: string, value: number) => Promise<void>;
+    remove: (key: string) => Promise<void>;
+    reload: () => Promise<void>;
+    get: (key: string) => number;
+  };
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(
@@ -20,10 +22,10 @@ export const DatabaseContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   // Use your existing hook logic here
-  const repository = useTimeBankDatabase();
+  const timeBankDatabase = useTimeBankDatabase();
 
   return (
-    <DatabaseContext.Provider value={repository}>
+    <DatabaseContext.Provider value={{ timeBankDatabase }}>
       {children}
     </DatabaseContext.Provider>
   );
