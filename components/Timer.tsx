@@ -11,7 +11,7 @@ const Timer: React.FC<TimerProps> = ({ bankTime }) => {
   const [milliseconds, setMilliseconds] = useState(0);
   const [status, setStatus] = useState<"stopped" | "running">("stopped"); // Status can only be 'stopped' or 'running'
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const stopwatch = useRef<Stopwatch>(new Stopwatch());
+  const stopwatch = useRef<Stopwatch>(new Stopwatch()); // Initialize with 59 minutes
 
   const handleStart = (): void => {
     stopwatch.current.start();

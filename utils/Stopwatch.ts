@@ -2,6 +2,9 @@ export class Stopwatch {
   private startedAt: number | null = null;
   private accumulatedMs: number = 0;
 
+  constructor(accumulatedMs = 0) {
+    this.accumulatedMs = accumulatedMs;
+  }
   /**
    * Starts or resumes the timer
    */
