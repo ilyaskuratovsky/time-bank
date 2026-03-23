@@ -6,7 +6,9 @@ import { formatTime } from "../utils/Utils";
 
 const Stats: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { bankedTimes } = useDatabaseContext();
+  const {
+    timeBankDatabase: { bankedTimes },
+  } = useDatabaseContext();
   const totalSeconds = bankedTimes["_"] ?? 0;
 
   const keys = Object.keys(bankedTimes);

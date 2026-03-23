@@ -5,6 +5,7 @@ import Sprint from "./components/Sprint";
 import Stats from "./components/Stats";
 import TabBar from "./components/TabBar";
 import Tools from "./components/Tools";
+import Log from "./components/Log";
 
 const Main = () => {
   const [activeTab, setActiveTab] = useState("sprint");
@@ -23,6 +24,7 @@ const Main = () => {
         {activeTab === "sprint" && <Sprint />}
         {activeTab === "stats" && <Stats />}
         {activeTab === "tools" && <Tools />}
+        {activeTab === "log" && <Log />}
       </View>
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </View>

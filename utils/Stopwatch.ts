@@ -1,14 +1,17 @@
+import logger from "../utils/Logger";
+
 export class Stopwatch {
   private startedAt: number | null = null;
   private accumulatedMs: number = 0;
 
-  constructor(accumulatedMs = 0) {
-    this.accumulatedMs = accumulatedMs;
+  constructor() {
+    logger.logMessage(`Stopwatch initialized`);
   }
   /**
    * Starts or resumes the timer
    */
   start() {
+    logger.logMessage(`Stopwatch.start() called`);
     if (this.startedAt !== null) return; // already running
     this.startedAt = performance.now();
   }
@@ -17,6 +20,8 @@ export class Stopwatch {
    * Resets the timer to 0 and stops it
    */
   reset() {
+    logger.logMessage(`Stopwatch.reset() called`);
+
     this.startedAt = null;
     this.accumulatedMs = 0;
   }
@@ -45,6 +50,7 @@ export class Stopwatch {
    * Optional: pause support (useful extension)
    */
   pause() {
+    logger.logMessage(`Stopwatch.pause() called`);
     if (this.startedAt === null) return;
 
     this.accumulatedMs += performance.now() - this.startedAt;

@@ -30,6 +30,34 @@ async function migrateDbIfNeeded(db: SQLiteDatabase) {
       value INTEGER NOT NULL
     );
   `);
+  await db.execAsync(`
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE IF NOT EXISTS log (
+      ts INTEGER NOT NULL,
+      value TEXT NOT NULL
+    );
+  `);
+  await db.execAsync(`
+    PRAGMA journal_mode = WAL;
+  DROP TABLE IF EXISTS stop_watches;
+    CREATE TABLE IF NOT EXISTS stop_watches (
+      id STRING PRIMARY KEY NOT NULL,
+      state VARCHAR NOT NULL,
+      accumulatedMillis INTEGER NULL,
+        currentStartTimestampMillis INTEGER NULL
+      );
+  `);
+  //`INSERT INTO stop_watches (id, state, accumulatedMillis, currentStartTimestampMillis)
+  // await db.execAsync(`
+  //   PRAGMA journal_mode = WAL;
+  //  DROP TABLE IF EXISTS stop_watches;
+  //   CREATE TABLE IF NOT EXISTS stop_watches (
+  //     id INTEGER PRIMARY KEY NOT NULL,
+  //     state VARCHAR NOT NULL,
+  //     accumulatedMillis INTEGER NOT NULL,
+  //     currentStartTimestampMillis INTEGER NOT NULLs
+  //   );
+  // `);
 }
 const App = () => {
   let [fontsLoaded] = useFonts({

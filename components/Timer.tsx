@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { formatTimeMilliseconds } from "../utils/Utils";
 import { useFonts, RobotoMono_500Medium } from "@expo-google-fonts/roboto-mono";
 import { Stopwatch } from "../utils/Stopwatch";
+
+import logger from "../utils/Logger";
+import nullthrows from "../utils/nullthrows";
+import { useDatabaseContext } from "../database/DatabaseContext";
+
 interface TimerProps {
   bankTime: (milliseconds: number) => Promise<void>;
 }
@@ -11,32 +16,50 @@ const Timer: React.FC<TimerProps> = ({ bankTime }) => {
   const [milliseconds, setMilliseconds] = useState(0);
   const [status, setStatus] = useState<"stopped" | "running">("stopped"); // Status can only be 'stopped' or 'running'
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const stopwatch = useRef<Stopwatch>(new Stopwatch()); // Initialize with 59 minutes
+  const stopwatch = useRef<Stopwatch | null>(null); // Initialize with 59 minutes
+  const { stopWatchDatabase } = useDatabaseContext();
+  const { start, pause, reset, getTime } = stopWatchDatabase;
 
   const handleStart = (): void => {
-    stopwatch.current.start();
+    // stopwatch.current?.start();
     setStatus("running");
+    start("_");
   };
 
   const handleStop = (): void => {
-    stopwatch.current.pause();
+    // nullthrows(stopwatch.current).pause();
     setStatus("stopped");
+    pause("_");
   };
 
   const handleBankTime = async (): Promise<void> => {
-    await bankTime(stopwatch.current.timeElapsedSeconds() ?? 0);
-    stopwatch.current.reset();
+    pause("_");
+    const time = await getTime("_");
+    console.log(`Banking time: ${time} ms`);
+    await bankTime(time / 1000);
+    await reset("_");
+    // await bankTime(nullthrows(stopwatch.current).timeElapsedSeconds() ?? 0);
+    // nullthrows(stopwatch.current).reset();
     handleStop();
   };
 
-  const handleClear = (): void => {
-    stopwatch.current.reset();
+  const handleClear = async (): Promise<void> => {
+    await reset("_");
+    // nullthrows(stopwatch.current).reset();
     setStatus("stopped");
   };
 
   useEffect(() => {
+    // stopwatch.current = new Stopwatch();
+    // intervalRef.current = setInterval(() => {
+    //   setMilliseconds(() =>
+    //     nullthrows(stopwatch.current).timeElapsedMilliseconds(),
+    //   );
+    // }, 10);
     intervalRef.current = setInterval(() => {
-      setMilliseconds(() => stopwatch.current.timeElapsedMilliseconds());
+      getTime("_").then((time) => {
+        setMilliseconds(time);
+      });
     }, 10);
   }, []);
 

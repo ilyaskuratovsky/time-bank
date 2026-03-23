@@ -39,6 +39,16 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
           Tools
         </Text>
       </Pressable>
+      <Pressable
+        style={[styles.tab, activeTab === "log" && styles.activeTab]}
+        onPress={() => onTabChange("log")}
+      >
+        <Text
+          style={[styles.tabText, activeTab === "log" && styles.activeText]}
+        >
+          Log
+        </Text>
+      </Pressable>
     </View>
   );
 };

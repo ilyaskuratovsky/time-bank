@@ -42,6 +42,9 @@ const Sprint: React.FC = () => {
       <View style={styles.timerContainer}>
         <Timer
           bankTime={async (seconds: number) => {
+            console.log(
+              `Banking time: ${seconds} seconds to project ${projects[activeIndex].name}`,
+            );
             await db.add("_", seconds);
           }}
         />

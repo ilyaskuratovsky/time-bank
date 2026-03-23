@@ -1,6 +1,8 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useTimeBankDatabase } from "./useTimeBankDatabase"; // Path to your hook
 import { BankedTimes } from "./Types";
+import { useLogDatabase } from "./useLogDatabase";
+import { useStopWatchDatabase } from "./useStopWatchDatabase";
 
 // Define the shape of our Context
 interface DatabaseContextType {
@@ -11,6 +13,17 @@ interface DatabaseContextType {
     remove: (key: string) => Promise<void>;
     reload: () => Promise<void>;
     get: (key: string) => number;
+  };
+  logDatabase: {
+    log: Array<{ ts: number; value: string }>;
+    add: (ts: number, value: string) => Promise<void>;
+    reload: () => Promise<void>;
+  };
+  stopWatchDatabase: {
+    start: (key: string) => Promise<void>;
+    pause: (id: string) => Promise<void>;
+    reset: (id: string) => Promise<void>;
+    getTime: (id: string) => Promise<number>;
   };
 }
 
@@ -23,9 +36,14 @@ export const DatabaseContextProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   // Use your existing hook logic here
   const timeBankDatabase = useTimeBankDatabase();
+  // Use your existing hook logic here
+  const logDatabase = useLogDatabase();
+  const stopWatchDatabase = useStopWatchDatabase();
 
   return (
-    <DatabaseContext.Provider value={{ timeBankDatabase }}>
+    <DatabaseContext.Provider
+      value={{ timeBankDatabase, logDatabase, stopWatchDatabase }}
+    >
       {children}
     </DatabaseContext.Provider>
   );
