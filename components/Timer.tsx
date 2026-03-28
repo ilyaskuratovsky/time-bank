@@ -7,66 +7,46 @@ import { Stopwatch } from "../utils/Stopwatch";
 import logger from "../utils/Logger";
 import nullthrows from "../utils/nullthrows";
 import { useDatabaseContext } from "../database/DatabaseContext";
+import { useStopWatchDatabase } from "../database/useStopWatchDatabase";
+import { useStopWatch } from "../database/useStopWatch";
 
 interface TimerProps {
   bankTime: (milliseconds: number) => Promise<void>;
 }
 
 const Timer: React.FC<TimerProps> = ({ bankTime }) => {
-  const [milliseconds, setMilliseconds] = useState(0);
-  const [status, setStatus] = useState<"stopped" | "running">("stopped"); // Status can only be 'stopped' or 'running'
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const stopwatch = useRef<Stopwatch | null>(null); // Initialize with 59 minutes
-  const { stopWatchDatabase } = useDatabaseContext();
-  const { start, pause, reset, getTime } = stopWatchDatabase;
+  const {
+    start: startStopWatch,
+    stop: stopStopWatch,
+    reset: resetStopWatch,
+    time: stopWatchTime,
+    state: stopWatchState,
+  } = useStopWatch("_");
+  const reset = (x: string) => {};
 
   const handleStart = (): void => {
-    // stopwatch.current?.start();
-    setStatus("running");
-    start("_");
+    startStopWatch();
   };
 
   const handleStop = (): void => {
-    // nullthrows(stopwatch.current).pause();
-    setStatus("stopped");
-    pause("_");
+    stopStopWatch();
   };
 
   const handleBankTime = async (): Promise<void> => {
-    pause("_");
-    const time = await getTime("_");
-    console.log(`Banking time: ${time} ms`);
-    await bankTime(time / 1000);
-    await reset("_");
-    // await bankTime(nullthrows(stopwatch.current).timeElapsedSeconds() ?? 0);
-    // nullthrows(stopwatch.current).reset();
+    resetStopWatch();
+    console.log(`Banking time: ${stopWatchTime} ms`);
+    await bankTime(stopWatchTime / 1000);
     handleStop();
   };
 
   const handleClear = async (): Promise<void> => {
-    await reset("_");
-    // nullthrows(stopwatch.current).reset();
-    setStatus("stopped");
+    resetStopWatch();
   };
-
-  useEffect(() => {
-    // stopwatch.current = new Stopwatch();
-    // intervalRef.current = setInterval(() => {
-    //   setMilliseconds(() =>
-    //     nullthrows(stopwatch.current).timeElapsedMilliseconds(),
-    //   );
-    // }, 10);
-    intervalRef.current = setInterval(() => {
-      getTime("_").then((time) => {
-        setMilliseconds(time);
-      });
-    }, 10);
-  }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.timerText}>
-        {formatTimeMilliseconds(milliseconds)}
+        {formatTimeMilliseconds(stopWatchTime)}
       </Text>
       <View style={styles.buttonContainer}>
         <Pressable
@@ -75,7 +55,7 @@ const Timer: React.FC<TimerProps> = ({ bankTime }) => {
         >
           <Text style={styles.buttonText}>Clear</Text>
         </Pressable>
-        {status === "stopped" && (
+        {stopWatchState === "stopped" && (
           <Pressable
             onPress={handleStart}
             style={[styles.button, styles.startButton]}
@@ -83,7 +63,7 @@ const Timer: React.FC<TimerProps> = ({ bankTime }) => {
             <Text style={styles.buttonText}>Start</Text>
           </Pressable>
         )}
-        {status === "running" && (
+        {stopWatchState === "running" && (
           <Pressable
             onPress={handleStop}
             style={[styles.button, styles.stopButton]}

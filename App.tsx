@@ -1,66 +1,71 @@
 import React from "react";
-import {
-  useSafeAreaInsets,
-  SafeAreaProvider,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SQLiteProvider, type SQLiteDatabase } from "expo-sqlite";
-//import { useFonts } from "@expo-google-fonts/roboto-mono";
-// import {
-//   SpaceMono_400Regular,
-//   RobotoMono_400Regular,
-//   RobotoMono_700Bold,
-// } from "@expo-google-fonts/space-mono";
-
 import {
   useFonts,
   RobotoMono_400Regular,
   RobotoMono_700Bold,
 } from "@expo-google-fonts/roboto-mono";
+import Constants from "expo-constants";
 
-import Main from "./Main"; // Import the CurrentBank component
+import Main from "./Main";
 import { DatabaseContextProvider } from "./database/DatabaseContext";
 
 async function migrateDbIfNeeded(db: SQLiteDatabase) {
-  const DATABASE_VERSION = 1;
+  const dbVersion = Number(Constants.expoConfig?.extra?.dbVersion ?? 1);
+
+  await db.execAsync(`PRAGMA journal_mode = WAL;`);
 
   await db.execAsync(`
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE IF NOT EXISTS banked_time (
-      key VARCHAR PRIMARY KEY NOT NULL, 
+    CREATE TABLE IF NOT EXISTS meta (
+      key TEXT PRIMARY KEY,
       value INTEGER NOT NULL
     );
   `);
+
+  const storedVersionResult = await db.getFirstAsync<{ value: number }>(
+    `SELECT value FROM meta WHERE key = 'dbVersion'`,
+  );
+  const storedVersion = storedVersionResult?.value ?? 0;
+
+  if (storedVersion !== dbVersion) {
+    alert("updating schema");
+    await db.execAsync(`
+      DROP TABLE IF EXISTS stop_watches;
+      DROP TABLE IF EXISTS banked_time;
+      DROP TABLE IF EXISTS log;
+    `);
+  }
+
   await db.execAsync(`
-    PRAGMA journal_mode = WAL;
+    CREATE TABLE IF NOT EXISTS stop_watches (
+      id TEXT PRIMARY KEY,
+      state TEXT NOT NULL,
+      startedAtMillis INTEGER,
+      accumulatedMillis INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS banked_time (
+      key TEXT PRIMARY KEY,
+      value INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS log (
       ts INTEGER NOT NULL,
       value TEXT NOT NULL
     );
   `);
-  await db.execAsync(`
-    PRAGMA journal_mode = WAL;
-  DROP TABLE IF EXISTS stop_watches;
-    CREATE TABLE IF NOT EXISTS stop_watches (
-      id STRING PRIMARY KEY NOT NULL,
-      state VARCHAR NOT NULL,
-      accumulatedMillis INTEGER NULL,
-        currentStartTimestampMillis INTEGER NULL
-      );
-  `);
-  //`INSERT INTO stop_watches (id, state, accumulatedMillis, currentStartTimestampMillis)
-  // await db.execAsync(`
-  //   PRAGMA journal_mode = WAL;
-  //  DROP TABLE IF EXISTS stop_watches;
-  //   CREATE TABLE IF NOT EXISTS stop_watches (
-  //     id INTEGER PRIMARY KEY NOT NULL,
-  //     state VARCHAR NOT NULL,
-  //     accumulatedMillis INTEGER NOT NULL,
-  //     currentStartTimestampMillis INTEGER NOT NULLs
-  //   );
-  // `);
+
+  if (storedVersion !== dbVersion) {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO meta (key, value) VALUES ('dbVersion', ?)`,
+      [dbVersion],
+    );
+  }
 }
+
 const App = () => {
-  let [fontsLoaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     TimerFont: RobotoMono_400Regular,
     TimerFontBold: RobotoMono_700Bold,
   });

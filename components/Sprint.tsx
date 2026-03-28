@@ -9,6 +9,7 @@ import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
 const Sprint: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { timeBankDatabase: db } = useDatabaseContext();
+
   const projects = [
     {
       id: "1",

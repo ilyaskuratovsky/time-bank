@@ -30,14 +30,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-font",
-      "expo-sqlite"
-    ],
+    "plugins": ["expo-font", "expo-sqlite"],
     "extra": {
       "eas": {
         "projectId": "6461f6ba-cd4a-4fff-8534-16ad6d892596"
-      }
+      },
+      "dbVersion": 1
     }
   }
 }

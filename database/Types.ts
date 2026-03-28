@@ -7,6 +7,12 @@ export interface StopWatches {
   [key: string]: StopWatch;
 }
 
+export type StopWatchData = {
+  accumulatedMillis: number;
+  startedAtMillis: number | null;
+  state: "running" | "stopped";
+};
+
 export interface StopWatch {
   id: string;
   currentStartTimestampMillis: number | null;
