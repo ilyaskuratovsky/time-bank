@@ -11,17 +11,18 @@ import { useStopWatchDatabase } from "../database/useStopWatchDatabase";
 import { useStopWatch } from "../database/useStopWatch";
 
 interface TimerProps {
+  project: string;
   bankTime: (milliseconds: number) => Promise<void>;
 }
 
-const Timer: React.FC<TimerProps> = ({ bankTime }) => {
+const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
   const {
     start: startStopWatch,
     stop: stopStopWatch,
     reset: resetStopWatch,
     time: stopWatchTime,
     state: stopWatchState,
-  } = useStopWatch("_");
+  } = useStopWatch(project);
   const reset = (x: string) => {};
 
   const handleStart = (): void => {

@@ -44,6 +44,7 @@ export function useTimeBankDatabase(options?: UseBankedTimesOptions) {
 
   const set = async (key: string, value: number): Promise<void> => {
     // Ensure the key exists; if not, insert it. If it exists, update it.
+    console.log(`Setting banked time for ${key} to ${value}`);
     await db.runAsync(
       `INSERT INTO banked_time (key, value) 
        VALUES (?, ?) 

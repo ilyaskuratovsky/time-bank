@@ -19,14 +19,6 @@ interface DatabaseContextType {
     add: (ts: number, value: string) => Promise<void>;
     reload: () => Promise<void>;
   };
-  /*
-  stopWatchDatabase: {
-    start: (key: string) => Promise<void>;
-    pause: (id: string) => Promise<void>;
-    reset: (id: string) => Promise<void>;
-    getTime: (id: string) => Promise<number>;
-  };
-  */
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(

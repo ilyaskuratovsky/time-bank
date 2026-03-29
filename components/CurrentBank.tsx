@@ -3,14 +3,17 @@ import { View, Text, StyleSheet, Button } from "react-native";
 import { formatTime } from "../utils/Utils"; // Import the time formatting utility
 import { useDatabaseContext } from "../database/DatabaseContext";
 
-interface CurrentBankProps {}
+interface CurrentBankProps {
+  project: string;
+}
 
-const CurrentBank: React.FC<CurrentBankProps> = ({}) => {
+const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
   const {
     timeBankDatabase: { bankedTimes, set },
   } = useDatabaseContext();
   //const { bankedTimes, set } = useDatabaseContext();
-  const currentSeconds = bankedTimes["_"] ?? 0;
+  console.log("CurrentBank render, project: " + project);
+  const currentSeconds = bankedTimes[project] ?? 0;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingSeconds, setEditingSeconds] = useState(currentSeconds);
@@ -22,7 +25,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({}) => {
   );
 
   const clearBankedTime = async () => {
-    await set("_", 0);
+    await set(project, 0);
   };
 
   const startEditing = () => {
@@ -37,7 +40,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({}) => {
 
   const saveEditing = async () => {
     const clamped = Math.max(0, editingSeconds);
-    await set("_", clamped);
+    await set(project, clamped);
     setIsEditing(false);
   };
 

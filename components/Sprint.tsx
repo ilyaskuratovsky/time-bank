@@ -8,15 +8,15 @@ import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
 
 const Sprint: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { timeBankDatabase: db } = useDatabaseContext();
+  const { timeBankDatabase } = useDatabaseContext();
 
   const projects = [
     {
-      id: "1",
+      id: "Work",
       name: "Work",
     },
     {
-      id: "2",
+      id: "Side Project",
       name: "Side Project",
     },
   ];
@@ -42,16 +42,17 @@ const Sprint: React.FC = () => {
       />
       <View style={styles.timerContainer}>
         <Timer
+          project={projects[activeIndex].id}
           bankTime={async (seconds: number) => {
             console.log(
               `Banking time: ${seconds} seconds to project ${projects[activeIndex].name}`,
             );
-            await db.add("_", seconds);
+            await timeBankDatabase.add(projects[activeIndex].id, seconds);
           }}
         />
       </View>
       <View style={styles.currentBankContainer}>
-        <CurrentBank />
+        <CurrentBank project={projects[activeIndex].id} />
       </View>
     </View>
   );
