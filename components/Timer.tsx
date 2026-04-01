@@ -1,19 +1,22 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Pressable, Vibration } from "react-native";
 import { formatTimeMilliseconds } from "../utils/Utils";
-import { useFonts, RobotoMono_500Medium } from "@expo-google-fonts/roboto-mono";
-import { Stopwatch } from "../utils/Stopwatch";
-
-import logger from "../utils/Logger";
-import nullthrows from "../utils/nullthrows";
-import { useDatabaseContext } from "../database/DatabaseContext";
-import { useStopWatchDatabase } from "../database/useStopWatchDatabase";
 import { useStopWatch } from "../database/useStopWatch";
 
 interface TimerProps {
   project: string;
   bankTime: (milliseconds: number) => Promise<void>;
 }
+
+const DURATIONS = {
+  "5s": 5 * 1000,
+  "5m": 5 * 60 * 1000,
+  "15m": 15 * 60 * 1000,
+  "30m": 30 * 60 * 1000,
+  Infinity: null as number | null,
+};
+
+type DurationKey = keyof typeof DURATIONS;
 
 const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
   const {
@@ -23,32 +26,90 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
     time: stopWatchTime,
     state: stopWatchState,
   } = useStopWatch(project);
-  const reset = (x: string) => {};
 
-  const handleStart = (): void => {
-    startStopWatch();
+  const [selectedDuration, setSelectedDuration] = useState<DurationKey>("15m");
+  const [vibrated, setVibrated] = useState(false);
+
+  const durationMs = DURATIONS[selectedDuration];
+  const isInfinity = durationMs === null;
+
+  const remainingTime = isInfinity
+    ? stopWatchTime
+    : Math.max(durationMs - stopWatchTime, 0);
+
+  // Vibrate once when countdown reaches 0
+  useEffect(() => {
+    if (!isInfinity && remainingTime === 0 && stopWatchTime > 0 && !vibrated) {
+      Vibration.vibrate(1000);
+      setVibrated(true);
+    }
+    if (remainingTime > 0) {
+      setVibrated(false); // reset vibrated when timer restarted
+    }
+  }, [remainingTime, isInfinity, stopWatchTime, vibrated]);
+
+  const handleSelectDuration = (key: DurationKey) => {
+    setSelectedDuration(key);
+    resetStopWatch();
+    setVibrated(false);
   };
 
-  const handleStop = (): void => {
-    stopStopWatch();
-  };
+  const handleStart = (): void => startStopWatch();
+  const handleStop = (): void => stopStopWatch();
 
   const handleBankTime = async (): Promise<void> => {
+    const elapsed = stopWatchTime;
+    console.log(`Banking time: ${elapsed} ms`);
+    await bankTime(elapsed / 1000);
     resetStopWatch();
-    console.log(`Banking time: ${stopWatchTime} ms`);
-    await bankTime(stopWatchTime / 1000);
-    handleStop();
+    stopStopWatch();
+    setVibrated(false);
   };
 
   const handleClear = async (): Promise<void> => {
     resetStopWatch();
+    setVibrated(false);
   };
 
   return (
     <View style={styles.container}>
+      {/* Duration Selector */}
+      <View style={styles.durationContainer}>
+        {(Object.keys(DURATIONS) as DurationKey[]).map((key) => (
+          <Pressable
+            key={key}
+            onPress={() => handleSelectDuration(key)}
+            style={[
+              styles.durationButton,
+              selectedDuration === key && styles.durationButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.durationText,
+                selectedDuration === key && styles.durationTextActive,
+              ]}
+            >
+              {key}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Main Timer Text */}
       <Text style={styles.timerText}>
-        {formatTimeMilliseconds(stopWatchTime)}
+        {remainingTime === 0 && !isInfinity
+          ? "00:00"
+          : formatTimeMilliseconds(remainingTime)}
       </Text>
+
+      {/* Elapsed Time */}
+      <Text style={styles.elapsedText}>
+        {isInfinity && remainingTime === stopWatchTime
+          ? "--:--"
+          : formatTimeMilliseconds(stopWatchTime)}
+      </Text>
+
       <View style={styles.buttonContainer}>
         <Pressable
           onPress={handleClear}
@@ -56,6 +117,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
         >
           <Text style={styles.buttonText}>Clear</Text>
         </Pressable>
+
         {stopWatchState === "stopped" && (
           <Pressable
             onPress={handleStart}
@@ -64,6 +126,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
             <Text style={styles.buttonText}>Start</Text>
           </Pressable>
         )}
+
         {stopWatchState === "running" && (
           <Pressable
             onPress={handleStop}
@@ -72,6 +135,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
             <Text style={styles.buttonText}>Pause</Text>
           </Pressable>
         )}
+
         <Pressable
           onPress={handleBankTime}
           style={[styles.button, styles.bankButton]}
@@ -93,6 +157,31 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#e6ffe6",
   },
+  durationContainer: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    paddingTop: 10,
+  },
+  durationButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    backgroundColor: "#ccc",
+    minWidth: 60,
+    alignItems: "center",
+  },
+  durationButtonActive: {
+    backgroundColor: "#007bff",
+  },
+  durationText: {
+    color: "#333",
+    fontWeight: "600",
+  },
+  durationTextActive: {
+    color: "#fff",
+  },
   timerText: {
     fontSize: 72,
     fontWeight: "bold",
@@ -100,9 +189,14 @@ const styles = StyleSheet.create({
     color: "#333",
     width: 300,
     textAlign: "center",
-    fontFamily: "TimerFont", // Using the name we defined in useFonts
-    fontVariant: ["tabular-nums"], // Ensures digits don't jump around
+    fontFamily: "TimerFont",
+    fontVariant: ["tabular-nums"],
     letterSpacing: -1,
+  },
+  elapsedText: {
+    fontSize: 18,
+    color: "#555",
+    marginBottom: 10,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -111,18 +205,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     justifyContent: "space-between",
     paddingBottom: 15,
-  },
-  leftSpacer: {
-    flex: 1,
-  },
-  centerAlignedButtons: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 5,
-    gap: 10,
-    backgroundColor: "blue",
   },
   button: {
     paddingVertical: 12,
@@ -148,11 +230,6 @@ const styles = StyleSheet.create({
   bankButton: {
     backgroundColor: "#ffc107",
     minWidth: 80,
-  },
-  rightButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
   },
   clearButton: {
     backgroundColor: "#6c757d",
