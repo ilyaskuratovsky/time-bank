@@ -1,26 +1,37 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
-import { formatTime } from "../utils/Utils"; // Import the time formatting utility
 import { useDatabaseContext } from "../database/DatabaseContext";
 
 interface CurrentBankProps {
   project: string;
 }
 
+const formatPrettyTime = (totalSeconds: number) => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.round(totalSeconds % 60);
+
+  return {
+    main: `${hours}h ${minutes}m`,
+    seconds: `${seconds}s`,
+  };
+};
+
 const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
   const {
     timeBankDatabase: { bankedTimes, set },
   } = useDatabaseContext();
-  //const { bankedTimes, set } = useDatabaseContext();
+
   console.log("CurrentBank render, project: " + project);
+
   const currentSeconds = bankedTimes[project] ?? 0;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingSeconds, setEditingSeconds] = useState(currentSeconds);
 
-  const formattedTime = formatTime(currentSeconds);
+  const formattedTime = formatPrettyTime(currentSeconds);
   const formattedEditingTime = useMemo(
-    () => formatTime(editingSeconds),
+    () => formatPrettyTime(editingSeconds),
     [editingSeconds],
   );
 
@@ -48,19 +59,22 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     setEditingSeconds((prev) => Math.max(0, prev + delta));
   };
 
+  const display = isEditing ? formattedEditingTime : formattedTime;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.bankedTimeText}>
-        {isEditing ? formattedEditingTime : formattedTime}
-      </Text>
+      <View style={styles.timeRow}>
+        <Text style={styles.bankedTimeText}>{display.main}</Text>
+        <Text style={styles.secondsText}>{display.seconds}</Text>
+      </View>
 
       {isEditing ? (
         <View style={styles.editContainer}>
           <View style={styles.adjustRow}>
-            <Button title="+" onPress={() => adjustSeconds(60)} />
-            <Button title="-" onPress={() => adjustSeconds(-60)} />
-            <Button title="+" onPress={() => adjustSeconds(1)} />
-            <Button title="-" onPress={() => adjustSeconds(-1)} />
+            <Button title="+1m" onPress={() => adjustSeconds(60)} />
+            <Button title="-1m" onPress={() => adjustSeconds(-60)} />
+            <Button title="+1s" onPress={() => adjustSeconds(1)} />
+            <Button title="-1s" onPress={() => adjustSeconds(-1)} />
           </View>
           <View style={styles.editActions}>
             <Button title="Cancel" onPress={cancelEditing} color="#6c757d" />
@@ -83,31 +97,35 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Make the container take all available vertical space
-    width: "100%", // Make it take all available horizontal space from its parent
-    // marginVertical: 20, // Removed to allow it to fill the parent's vertical space completely
+    flex: 1,
+    width: "100%",
     padding: 15,
     borderWidth: 1,
     borderColor: "#a0d9b4",
     borderRadius: 10,
     backgroundColor: "#e6ffe6",
     alignItems: "center",
-    justifyContent: "center", // Center content vertically within this expanded container
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  label: {
-    fontSize: 18,
-    color: "#333",
-    marginBottom: 5,
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
   },
   bankedTimeText: {
-    fontSize: 64, // Big font size
+    fontSize: 64,
     fontWeight: "bold",
-    color: "#28a745", // Green color
+    color: "#28a745",
+  },
+  secondsText: {
+    fontSize: 20,
+    color: "#6c757d",
+    marginLeft: 6,
+    marginBottom: 10,
   },
   buttonWrapper: {
     marginTop: 16,

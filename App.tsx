@@ -10,6 +10,7 @@ import Constants from "expo-constants";
 
 import Main from "./Main";
 import { DatabaseContextProvider } from "./database/DatabaseContext";
+import * as Notifications from "expo-notifications";
 
 async function migrateDbIfNeeded(db: SQLiteDatabase) {
   const dbVersion = Number(Constants.expoConfig?.extra?.dbVersion ?? 1);
@@ -63,6 +64,16 @@ async function migrateDbIfNeeded(db: SQLiteDatabase) {
     );
   }
 }
+
+// 👇 put it HERE (top-level, outside component)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const App = () => {
   const [fontsLoaded] = useFonts({

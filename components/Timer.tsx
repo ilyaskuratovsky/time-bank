@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, Vibration } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Alert,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Vibration,
+  AppState,
+} from "react-native";
 import { formatTimeMilliseconds } from "../utils/Utils";
 import { useStopWatch } from "../database/useStopWatch";
+import * as Notifications from "expo-notifications";
+import nullthrows from "../utils/nullthrows";
 
 interface TimerProps {
   project: string;
@@ -28,47 +38,147 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
   } = useStopWatch(project);
 
   const [selectedDuration, setSelectedDuration] = useState<DurationKey>("15m");
-  const [vibrated, setVibrated] = useState(false);
+  const notificationIdRef = useRef<string | null>(null);
 
   const durationMs = DURATIONS[selectedDuration];
   const isInfinity = durationMs === null;
 
   const remainingTime = isInfinity
     ? stopWatchTime
-    : Math.max(durationMs - stopWatchTime, 0);
-
+    : Math.max(durationMs - (stopWatchTime ?? 0), 0);
+  const [timerWaitingToFinish, setTimerWaitingToFinish] =
+    useState<boolean>(false);
   // Vibrate once when countdown reaches 0
-  useEffect(() => {
-    if (!isInfinity && remainingTime === 0 && stopWatchTime > 0 && !vibrated) {
-      Vibration.vibrate(1000);
-      setVibrated(true);
-    }
-    if (remainingTime > 0) {
-      setVibrated(false); // reset vibrated when timer restarted
-    }
-  }, [remainingTime, isInfinity, stopWatchTime, vibrated]);
+  const prevRef = useRef<number | null>(null);
 
-  const handleSelectDuration = (key: DurationKey) => {
-    setSelectedDuration(key);
-    resetStopWatch();
-    setVibrated(false);
+  useEffect(() => {
+    if (!timerWaitingToFinish) {
+      return;
+    }
+    const checkTimer = async () => {
+      if (remainingTime == null) {
+        return;
+      }
+      if (Math.ceil((remainingTime ?? 0)/1000) != Math.ceil((prevRef.current ?? 0)/1000)) {
+        console.log("remainingTime:" + remainingTime);
+      }
+      if (
+        !isInfinity &&
+        prevRef.current !== null &&
+        prevRef.current > 0 &&
+        remainingTime <= 0
+      ) {
+        setTimerWaitingToFinish(false);
+        //console.log("fire timer finished here, remainingTime: " + remainingTime + ", stopWatchTime: " + stopWatchTime);
+        await cancelTimerNotification(); // ✅ ADD THIS
+        await onTimerFinished();
+      }
+      prevRef.current = remainingTime;
+    };
+    checkTimer();
+  }, [remainingTime, isInfinity]);
+
+  const appState = useRef(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      appState.current = nextState;
+    });
+
+    return () => sub.remove();
+  }, []);
+
+  const onTimerFinished = async () => {
+    if (appState.current === "active") {
+      console.log("timer done, vibrating");
+      Vibration.vibrate(2000);
+      return;
+    }
   };
 
-  const handleStart = (): void => startStopWatch();
-  const handleStop = (): void => stopStopWatch();
+  const handleSelectDuration = async (key: DurationKey) => {
+    setSelectedDuration(key);
+    resetStopWatch();
+    setTimerWaitingToFinish(false);
+    await cancelTimerNotification();
+  };
+
+  const cancelTimerNotification = async () => {
+    if (notificationIdRef.current) {
+      await Notifications.cancelScheduledNotificationAsync(
+        notificationIdRef.current,
+      );
+      notificationIdRef.current = null;
+    }
+  };
+
+  const scheduleTimerNotification = async (time: number) => {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Timer done",
+        body: "Your timer finished",
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.ceil(time / 1000)),
+      },
+    });
+    notificationIdRef.current = id;
+  };
+
+  const handleStart = async (): Promise<void> => {
+    console.log("handle start");
+    startStopWatch();
+    await cancelTimerNotification();
+    if (!isInfinity) {
+      const hasPermission = await checkNotificationPermissions();
+      if (hasPermission) {
+        await scheduleTimerNotification(nullthrows(remainingTime));
+      }
+      setTimerWaitingToFinish(true);
+    }
+  };
+  const handleStop = async (): Promise<void> => {
+    console.log("handle stop");
+    stopStopWatch();
+    setTimerWaitingToFinish(false);
+    await cancelTimerNotification();
+  };
 
   const handleBankTime = async (): Promise<void> => {
-    const elapsed = stopWatchTime;
-    console.log(`Banking time: ${elapsed} ms`);
-    await bankTime(elapsed / 1000);
-    resetStopWatch();
-    stopStopWatch();
-    setVibrated(false);
+    console.log("handle bank time");
+    if (stopWatchTime != null) {
+      const elapsed = stopWatchTime;
+      console.log(`Banking time: ${elapsed} ms`);
+      await cancelTimerNotification();
+      await bankTime(elapsed / 1000);
+      setTimerWaitingToFinish(false);
+      resetStopWatch();
+    }
   };
 
   const handleClear = async (): Promise<void> => {
     resetStopWatch();
-    setVibrated(false);
+    setTimerWaitingToFinish(false);
+    await cancelTimerNotification();
+  };
+
+  const checkNotificationPermissions = async (): Promise<boolean> => {
+    const existing = await Notifications.getPermissionsAsync();
+    let status = existing.status;
+    console.log("existing permission:", existing);
+
+    if (status !== "granted") {
+      const requested = await Notifications.requestPermissionsAsync();
+      status = requested.status;
+      console.log("requested permission:", requested);
+    }
+
+    if (status !== "granted") {
+      console.log("Notifications permission not granted");
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -100,14 +210,14 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
       <Text style={styles.timerText}>
         {remainingTime === 0 && !isInfinity
           ? "00:00"
-          : formatTimeMilliseconds(remainingTime)}
+          : formatTimeMilliseconds(remainingTime ?? 0)}
       </Text>
 
       {/* Elapsed Time */}
       <Text style={styles.elapsedText}>
         {isInfinity && remainingTime === stopWatchTime
           ? "--:--"
-          : formatTimeMilliseconds(stopWatchTime)}
+          : formatTimeMilliseconds(stopWatchTime ?? 0)}
       </Text>
 
       <View style={styles.buttonContainer}>

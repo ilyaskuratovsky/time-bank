@@ -57,13 +57,13 @@ export function useStopWatch(id: string): {
     if (stopWatch.state !== "running") return;
 
     const elapsed = getElapsedMillis(stopWatch);
-    const remainder = elapsed % 1000;
-    const delay = remainder === 0 ? 1000 : 1000 - remainder;
+      const remainder = elapsed % 1000;
+      const delay = remainder === 0 ? 1000 : 1000 - remainder;
 
-    timeoutRef.current = setTimeout(() => {
-      rerender();
-      scheduleNextTick();
-    }, delay);
+      timeoutRef.current = setTimeout(() => {
+        rerender();
+        scheduleNextTick();
+      }, delay);
   }, [clearScheduledTick, id, rerender]);
 
   useEffect(() => {
@@ -157,5 +157,6 @@ export function useStopWatch(id: string): {
   const time = getElapsedMillis(getOrCreateStopWatch(id));
   const state = getOrCreateStopWatch(id).state;
 
+  //console.log('useStopWatch: time: ' + time + ', state: ' + state);
   return { start, stop, reset, state, time, isLoaded };
 }

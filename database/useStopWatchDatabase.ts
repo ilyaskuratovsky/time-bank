@@ -11,7 +11,7 @@ export function useStopWatchDatabase() {
     accumulatedMillis: number,
     startedAtMillis: number | null,
   ): Promise<void> => {
-    console.log(`start`);
+    console.log(`useStopWatchDatabase: update, key: ${key}, state: ${state}, accumulatedMillis: ${accumulatedMillis}, startedAtMillis: ${startedAtMillis}`);
     await db.runAsync(
       `INSERT INTO stop_watches (id, state, startedAtMillis, accumulatedMillis)
    VALUES (?, ?, ?, ?)
