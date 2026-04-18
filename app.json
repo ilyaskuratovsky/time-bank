@@ -25,7 +25,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ilyaskuratovsky.timebank"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,7 +34,15 @@
     "plugins": [
       "expo-font",
       "expo-sqlite",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/alarm_1.caf"
+          ]
+        }
+      ]
     ],
     "extra": {
       "eas": {

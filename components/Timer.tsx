@@ -114,9 +114,9 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
   const scheduleTimerNotification = async (time: number) => {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Timer done",
+        title: "xTimer done",
         body: "Your timer finished",
-        sound: true,
+        sound: "alarm_1.caf",
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
