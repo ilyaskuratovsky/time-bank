@@ -59,7 +59,10 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
       if (remainingTime == null) {
         return;
       }
-      if (Math.ceil((remainingTime ?? 0)/1000) != Math.ceil((prevRef.current ?? 0)/1000)) {
+      if (
+        Math.ceil((remainingTime ?? 0) / 1000) !=
+        Math.ceil((prevRef.current ?? 0) / 1000)
+      ) {
         console.log("remainingTime:" + remainingTime);
       }
       if (
@@ -91,6 +94,14 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
     if (appState.current === "active") {
       console.log("timer done, vibrating");
       Vibration.vibrate(2000);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Timer done (foreground)",
+          body: "Your timer finished",
+          sound: "alarm_1.caf",
+        },
+        trigger: null, // fire immediately
+      });
       return;
     }
   };
@@ -114,7 +125,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
   const scheduleTimerNotification = async (time: number) => {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "xTimer done",
+        title: "Timer done",
         body: "Your timer finished",
         sound: "alarm_1.caf",
       },
