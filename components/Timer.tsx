@@ -9,6 +9,7 @@ import {
   AppState,
 } from "react-native";
 import { formatTimeMilliseconds } from "../utils/Utils";
+import TimerCircle from "./TimerCircle";
 import { useStopWatch } from "../database/useStopWatch";
 import * as Notifications from "expo-notifications";
 import nullthrows from "../utils/nullthrows";
@@ -46,6 +47,16 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
   const remainingTime = isInfinity
     ? stopWatchTime
     : Math.max(durationMs - (stopWatchTime ?? 0), 0);
+
+  const displayRemainingTime = isInfinity
+    ? Math.max(stopWatchTime ?? 0, 0)
+    : Math.max(Math.ceil((remainingTime ?? 0) / 1000) * 1000, 0);
+
+  const displayElapsedTime = Math.max(
+    Math.floor((stopWatchTime ?? 0) / 1000) * 1000,
+    0,
+  );
+
   const [timerWaitingToFinish, setTimerWaitingToFinish] =
     useState<boolean>(false);
   // Vibrate once when countdown reaches 0
@@ -217,20 +228,12 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
         ))}
       </View>
 
-      {/* Main Timer Text */}
-      <Text style={styles.timerText}>
-        {remainingTime === 0 && !isInfinity
-          ? "00:00"
-          : formatTimeMilliseconds(remainingTime ?? 0)}
-      </Text>
-
-      {/* Elapsed Time */}
-      <Text style={styles.elapsedText}>
-        {isInfinity && remainingTime === stopWatchTime
-          ? "--:--"
-          : formatTimeMilliseconds(stopWatchTime ?? 0)}
-      </Text>
-
+      <TimerCircle
+        remainingTimeMs={displayRemainingTime}
+        elapsedTimeMs={displayElapsedTime}
+        durationMs={durationMs}
+        isInfinity={isInfinity}
+      />
       <View style={styles.buttonContainer}>
         <Pressable
           onPress={handleClear}
