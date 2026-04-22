@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
 import { useDatabaseContext } from "../database/DatabaseContext";
+import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 
 interface CurrentBankProps {
   project: string;
@@ -67,7 +68,14 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
         <Text style={styles.bankedTimeText}>{display.main}</Text>
         <Text style={styles.secondsText}>{display.seconds}</Text>
       </View>
-
+        <DayIntervalsTimeline
+          intervals={[
+            { start: "06:30", end: "08:15", color: "#EF4444" },
+            { start: "08:15", end: "09:45", color: "#3B82F6" },
+            { start: "21:30", end: "01:15", color: "#10B981" }, // crosses midnight
+          ]}
+          height={18}
+        />
       {isEditing ? (
         <View style={styles.editContainer}>
           <View style={styles.adjustRow}>
