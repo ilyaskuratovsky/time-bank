@@ -12,7 +12,9 @@ function getOrCreateStopWatch(id: string): StopWatchData {
     accumulatedMillis: 0,
     startedAtMillis: null,
     state: "stopped",
+    intervals: [],
   };
+
   store.set(id, existing);
   return existing;
 }
@@ -31,9 +33,10 @@ export function useStopWatch(id: string): {
   reset: () => Promise<void>;
   time: number;
   state: "running" | "stopped";
+  intervals: { start: number; end: number }[];
   isLoaded: boolean;
 } {
-  const { get, update } = useStopWatchDatabase();
+  const { get: getDatabase, update: updateDatabase } = useStopWatchDatabase();
 
   const [, setTick] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -57,20 +60,20 @@ export function useStopWatch(id: string): {
     if (stopWatch.state !== "running") return;
 
     const elapsed = getElapsedMillis(stopWatch);
-      const remainder = elapsed % 1000;
-      const delay = remainder === 0 ? 1000 : 1000 - remainder;
+    const remainder = elapsed % 1000;
+    const delay = remainder === 0 ? 1000 : 1000 - remainder;
 
-      timeoutRef.current = setTimeout(() => {
-        rerender();
-        scheduleNextTick();
-      }, delay);
+    timeoutRef.current = setTimeout(() => {
+      rerender();
+      scheduleNextTick();
+    }, delay);
   }, [clearScheduledTick, id, rerender]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const dbValue = await get(id);
+      const dbValue = await getDatabase(id);
       if (cancelled) return;
 
       const stopWatch = getOrCreateStopWatch(id);
@@ -79,6 +82,7 @@ export function useStopWatch(id: string): {
         stopWatch.accumulatedMillis = dbValue.accumulatedMillis;
         stopWatch.startedAtMillis = dbValue.startedAtMillis;
         stopWatch.state = dbValue.state;
+        stopWatch.intervals = dbValue.intervals ?? [];
       }
 
       if (stopWatch.state === "running") {
@@ -95,46 +99,59 @@ export function useStopWatch(id: string): {
       cancelled = true;
       clearScheduledTick();
     };
-  }, [clearScheduledTick, get, id, rerender, scheduleNextTick]);
+  }, [clearScheduledTick, getDatabase, id, rerender, scheduleNextTick]);
 
   const start = useCallback(async () => {
     const stopWatch = getOrCreateStopWatch(id);
     if (stopWatch.state === "running") return;
 
-    stopWatch.state = "running";
-    stopWatch.startedAtMillis = Date.now();
+    const now = Date.now();
 
-    await update(
+    stopWatch.state = "running";
+    stopWatch.startedAtMillis = now;
+
+    await updateDatabase(
       id,
       stopWatch.state,
       stopWatch.accumulatedMillis,
       stopWatch.startedAtMillis,
+      stopWatch.intervals,
     );
 
     rerender();
     scheduleNextTick();
-  }, [id, rerender, scheduleNextTick, update]);
+  }, [id, rerender, scheduleNextTick, updateDatabase]);
 
   const stop = useCallback(async () => {
     const stopWatch = getOrCreateStopWatch(id);
+
     if (stopWatch.state !== "running" || stopWatch.startedAtMillis == null) {
       return;
     }
 
-    stopWatch.accumulatedMillis += Date.now() - stopWatch.startedAtMillis;
+    const now = Date.now();
+
+    stopWatch.accumulatedMillis += now - stopWatch.startedAtMillis;
+
+    stopWatch.intervals.push({
+      start: stopWatch.startedAtMillis,
+      end: now,
+    });
+
     stopWatch.startedAtMillis = null;
     stopWatch.state = "stopped";
 
-    await update(
+    await updateDatabase(
       id,
       stopWatch.state,
       stopWatch.accumulatedMillis,
       stopWatch.startedAtMillis,
+      stopWatch.intervals,
     );
 
     clearScheduledTick();
     rerender();
-  }, [clearScheduledTick, id, rerender, update]);
+  }, [clearScheduledTick, id, rerender, updateDatabase]);
 
   const reset = useCallback(async () => {
     const stopWatch = getOrCreateStopWatch(id);
@@ -142,21 +159,24 @@ export function useStopWatch(id: string): {
     stopWatch.accumulatedMillis = 0;
     stopWatch.startedAtMillis = null;
     stopWatch.state = "stopped";
+    stopWatch.intervals = [];
 
-    await update(
+    await updateDatabase(
       id,
       stopWatch.state,
       stopWatch.accumulatedMillis,
       stopWatch.startedAtMillis,
+      stopWatch.intervals,
     );
 
     clearScheduledTick();
     rerender();
-  }, [clearScheduledTick, id, rerender, update]);
+  }, [clearScheduledTick, id, rerender, updateDatabase]);
 
-  const time = getElapsedMillis(getOrCreateStopWatch(id));
-  const state = getOrCreateStopWatch(id).state;
+  const stopWatch = getOrCreateStopWatch(id);
+  const time = getElapsedMillis(stopWatch);
+  const state = stopWatch.state;
+  const intervals = stopWatch.intervals;
 
-  //console.log('useStopWatch: time: ' + time + ', state: ' + state);
-  return { start, stop, reset, state, time, isLoaded };
+  return { start, stop, reset, state, time, intervals, isLoaded };
 }

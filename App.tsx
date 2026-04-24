@@ -40,10 +40,11 @@ async function migrateDbIfNeeded(db: SQLiteDatabase) {
 
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS stop_watches (
-      id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY NOT NULL,
       state TEXT NOT NULL,
       startedAtMillis INTEGER,
-      accumulatedMillis INTEGER NOT NULL
+      accumulatedMillis INTEGER NOT NULL,
+      intervals TEXT
     );
 
     CREATE TABLE IF NOT EXISTS banked_time (

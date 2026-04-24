@@ -7,10 +7,23 @@ export interface StopWatches {
   [key: string]: StopWatch;
 }
 
+export type StopWatchInterval = {
+  start: number;
+  end: number;
+};
+
+export type StopWatchDataRow = {
+  state: "running" | "stopped";
+  startedAtMillis: number | null;
+  accumulatedMillis: number;
+  intervals: string | null;
+};
+
 export type StopWatchData = {
   accumulatedMillis: number;
   startedAtMillis: number | null;
   state: "running" | "stopped";
+  intervals: StopWatchInterval[];
 };
 
 export interface StopWatch {
