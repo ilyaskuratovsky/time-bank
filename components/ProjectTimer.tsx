@@ -6,9 +6,8 @@ import CurrentBank from "./CurrentBank";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
 import ProjectSwitcherDemo from "./ProjectSwitcherDemo";
-import ProjectTimer from "./ProjectTimer";
 
-const Sprint: React.FC = () => {
+const ProjectTimer: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { timeBankDatabase } = useDatabaseContext();
 
@@ -35,19 +34,33 @@ const Sprint: React.FC = () => {
         justifyContent: "center",
       }}
     >
+      <ProjectSwitcherHeader
+        projects={projects}
+        activeIndex={activeIndex}
+        onChange={(index) => {
+          setActiveIndex(index);
+        }}
+      />
+      {/*
+      <ProjectSwitcherDemo />
+      */}
       <View style={styles.timerContainer}>
-        <ProjectTimer />
-      </View>
-      <View style={styles.currentBankContainer}>
-        <CurrentBank project={projects[activeIndex].id} />
+        <Timer
+          project={projects[activeIndex].id}
+          bankTimeInterval={async (intervals: { start: number; end: number }[]) => {
+            console.log("Banking intervals: ", intervals);
+            await timeBankDatabase.addIntervals(projects[activeIndex].id, intervals);
+          }}
+        />
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  timerContainer: { width: "100%", height: 400 },
+  timerContainer: { width: "90%" },
   currentBankContainer: { width: "90%", flex: 1 },
 });
 
-export default Sprint;
+export default ProjectTimer;
+

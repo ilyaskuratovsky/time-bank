@@ -302,12 +302,12 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 4,
     padding: 0,
-    borderWidth: 1,
+    //borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
-    backgroundColor: "#e6ffe6",
+    //backgroundColor: "#e6ffe6",
   },
   durationContainer: {
     flexDirection: "row",
