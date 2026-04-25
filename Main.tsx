@@ -26,6 +26,7 @@ const Main = () => {
         {activeTab === "stats" && <Stats />}
         {activeTab === "tools" && <Tools />}
         {activeTab === "log" && <Log />}
+        {activeTab === "database" && <Database />}
       </View>
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </View>

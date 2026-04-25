@@ -83,7 +83,8 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     const deltaSeconds = clamped - currentSeconds;
 
     if (deltaSeconds !== 0) {
-      await addManualRecord(project, deltaSeconds, editingStartedAt);
+      console.log("adding manual record: ", { project, deltaSeconds, editingStartedAt });
+      await addManualRecord(project, editingStartedAt, deltaSeconds );
     }
 
     setIsEditing(false);
@@ -102,7 +103,6 @@ const timelineIntervals = useMemo(() => {
     end: toTimeString(interval.end),
     color: "#3B82F6", // or vary per interval if you want
   }));
-  console.log("calculated timeline intervals: ", JSON.stringify(timelineIntervals, null, 2));
   return timelineIntervals;
 }, [allIntervals]);  
 

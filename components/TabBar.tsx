@@ -49,6 +49,16 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
           Log
         </Text>
       </Pressable>
+      <Pressable
+        style={[styles.tab, activeTab === "log" && styles.activeTab]}
+        onPress={() => onTabChange("database")}
+      >
+        <Text
+          style={[styles.tabText, activeTab === "database" && styles.activeText]}
+        >
+          DB
+        </Text>
+      </Pressable>
     </View>
   );
 };
