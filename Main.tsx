@@ -6,6 +6,7 @@ import Stats from "./components/Stats";
 import TabBar from "./components/TabBar";
 import Tools from "./components/Tools";
 import Log from "./components/Log";
+import Database from "./components/Database";
 
 const Main = () => {
   const [activeTab, setActiveTab] = useState("sprint");

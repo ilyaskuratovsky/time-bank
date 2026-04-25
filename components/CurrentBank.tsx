@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
+import { getSecondsInRange, getTodayRange } from "../utils/Utils";
 
 interface CurrentBankProps {
   project: string;
@@ -20,15 +21,38 @@ const formatPrettyTime = (totalSeconds: number) => {
 
 const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
   const {
-    timeBankDatabase: { bankedTimes, set },
+    timeBankDatabase: {
+      intervalsByProject,
+      manualRecordsByProject,
+      addManualRecord,
+      set,
+    },
   } = useDatabaseContext();
 
-  console.log("CurrentBank render, project: " + project);
+  const allIntervals = intervalsByProject[project] ?? [];
+  const allManualRecords = manualRecordsByProject[project] ?? [];
 
-  const currentSeconds = bankedTimes[project] ?? 0;
+  const today = useMemo(() => getTodayRange(), []);
+
+  const intervalSecondsToday = useMemo(() => {
+    return getSecondsInRange(allIntervals, today.start, today.end);
+  }, [allIntervals, today]);
+
+  const manualSecondsToday = useMemo(() => {
+    return allManualRecords.reduce((total, record) => {
+      if (record.ts >= today.start && record.ts < today.end) {
+        return total + record.seconds;
+      }
+
+      return total;
+    }, 0);
+  }, [allManualRecords, today]);
+
+  const currentSeconds = intervalSecondsToday + manualSecondsToday;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingSeconds, setEditingSeconds] = useState(currentSeconds);
+  const [editingStartedAt, setEditingStartedAt] = useState<number | null>(null);
 
   const formattedTime = formatPrettyTime(currentSeconds);
   const formattedEditingTime = useMemo(
@@ -37,23 +61,33 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
   );
 
   const clearBankedTime = async () => {
-    await set(project, 0);
+    await set(project, [], []);
   };
 
   const startEditing = () => {
     setEditingSeconds(currentSeconds);
+    setEditingStartedAt(Date.now());
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
     setIsEditing(false);
     setEditingSeconds(currentSeconds);
+    setEditingStartedAt(null);
   };
 
   const saveEditing = async () => {
+    if (editingStartedAt == null) return;
+
     const clamped = Math.max(0, editingSeconds);
-    await set(project, clamped);
+    const deltaSeconds = clamped - currentSeconds;
+
+    if (deltaSeconds !== 0) {
+      await addManualRecord(project, deltaSeconds, editingStartedAt);
+    }
+
     setIsEditing(false);
+    setEditingStartedAt(null);
   };
 
   const adjustSeconds = (delta: number) => {
@@ -68,14 +102,16 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
         <Text style={styles.bankedTimeText}>{display.main}</Text>
         <Text style={styles.secondsText}>{display.seconds}</Text>
       </View>
-        <DayIntervalsTimeline
-          intervals={[
-            { start: "06:30", end: "08:15", color: "#EF4444" },
-            { start: "08:15", end: "09:45", color: "#3B82F6" },
-            { start: "21:30", end: "01:15", color: "#10B981" }, // crosses midnight
-          ]}
-          height={18}
-        />
+
+      <DayIntervalsTimeline
+        intervals={[
+          { start: "06:30", end: "08:15", color: "#EF4444" },
+          { start: "08:15", end: "09:45", color: "#3B82F6" },
+          { start: "21:30", end: "01:15", color: "#10B981" },
+        ]}
+        height={18}
+      />
+
       {isEditing ? (
         <View style={styles.editContainer}>
           <View style={styles.adjustRow}>
@@ -84,6 +120,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
             <Button title="+1s" onPress={() => adjustSeconds(1)} />
             <Button title="-1s" onPress={() => adjustSeconds(-1)} />
           </View>
+
           <View style={styles.editActions}>
             <Button title="Cancel" onPress={cancelEditing} color="#6c757d" />
             <Button title="Save" onPress={saveEditing} color="#007bff" />

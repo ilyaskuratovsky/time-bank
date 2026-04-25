@@ -16,7 +16,9 @@ import nullthrows from "../utils/nullthrows";
 
 interface TimerProps {
   project: string;
-  bankTime: (milliseconds: number) => Promise<void>;
+  bankTimeInterval: (
+    intervals: { start: number; end: number }[],
+  ) => Promise<void>;
 }
 
 const DURATIONS = {
@@ -29,14 +31,16 @@ const DURATIONS = {
 
 type DurationKey = keyof typeof DURATIONS;
 
-const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
+const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
   const {
     start: startStopWatch,
     stop: stopStopWatch,
     reset: resetStopWatch,
     time: stopWatchTime,
     state: stopWatchState,
+    intervals,
   } = useStopWatch(project);
+  //console.log("Timer component ", intervals);
 
   const [selectedDuration, setSelectedDuration] = useState<DurationKey>("15m");
   const notificationIdRef = useRef<string | null>(null);
@@ -167,16 +171,40 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
     await cancelTimerNotification();
   };
 
-  const handleBankTime = async (): Promise<void> => {
-    console.log("handle bank time");
-    if (stopWatchTime != null) {
-      const elapsed = stopWatchTime;
-      console.log(`Banking time: ${elapsed} ms`);
-      await cancelTimerNotification();
-      await bankTime(elapsed / 1000);
-      setTimerWaitingToFinish(false);
-      resetStopWatch();
+  const handleBankTimeInterval = async (): Promise<void> => {
+    console.log("handle bank time interval");
+
+    await cancelTimerNotification();
+
+    let intervalsToBank = intervals ?? [];
+
+    if (stopWatchState === "running") {
+      const now = Date.now();
+
+      // Add the currently active interval manually.
+      // stopStopWatch() will also persist it in the stopwatch DB,
+      // but React state may not update synchronously before this function continues.
+      intervalsToBank = [
+        ...intervalsToBank,
+        {
+          start: now - stopWatchTime,
+          end: now,
+        },
+      ];
+
+      await stopStopWatch();
     }
+
+    if (intervalsToBank.length === 0) {
+      return;
+    }
+
+    console.log("Banking intervals: ", intervalsToBank);
+
+    await bankTimeInterval(intervalsToBank);
+
+    setTimerWaitingToFinish(false);
+    resetStopWatch();
   };
 
   const handleClear = async (): Promise<void> => {
@@ -261,7 +289,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTime }) => {
         )}
 
         <Pressable
-          onPress={handleBankTime}
+          onPress={handleBankTimeInterval}
           style={[styles.button, styles.bankButton]}
         >
           <Text style={styles.buttonText}>Bank</Text>

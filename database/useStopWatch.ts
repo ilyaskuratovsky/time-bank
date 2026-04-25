@@ -123,6 +123,7 @@ export function useStopWatch(id: string): {
   }, [id, rerender, scheduleNextTick, updateDatabase]);
 
   const stop = useCallback(async () => {
+    console.log("Stopping stopwatch with id");
     const stopWatch = getOrCreateStopWatch(id);
 
     if (stopWatch.state !== "running" || stopWatch.startedAtMillis == null) {
@@ -137,6 +138,7 @@ export function useStopWatch(id: string): {
       start: stopWatch.startedAtMillis,
       end: now,
     });
+    console.log("Stopwatch intervals: ", intervals);
 
     stopWatch.startedAtMillis = null;
     stopWatch.state = "stopped";

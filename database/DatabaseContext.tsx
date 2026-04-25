@@ -1,19 +1,51 @@
 import React, { createContext, useContext, ReactNode } from "react";
-import { useTimeBankDatabase } from "./useTimeBankDatabase"; // Path to your hook
-import { BankedTimes } from "./Types";
+import {
+  useTimeBankDatabase,
+  Interval,
+  ManualRecord,
+  ProjectIntervals,
+  ProjectManualRecords,
+} from "./useTimeBankDatabase";
 import { useLogDatabase } from "./useLogDatabase";
-import { useStopWatchDatabase } from "./useStopWatchDatabase";
 
-// Define the shape of our Context
 interface DatabaseContextType {
   timeBankDatabase: {
-    bankedTimes: BankedTimes;
-    add: (key: string, value: number) => Promise<void>;
-    set: (key: string, value: number) => Promise<void>;
-    remove: (key: string) => Promise<void>;
+    intervalsByProject: ProjectIntervals;
+    manualRecordsByProject: ProjectManualRecords;
+    isLoading: boolean;
+
     reload: () => Promise<void>;
-    get: (key: string) => number;
+
+    set: (
+      key: string,
+      intervals: Interval[],
+      manualRecords?: ManualRecord[],
+    ) => Promise<void>;
+
+    setManualRecords: (
+      key: string,
+      manualRecords: ManualRecord[],
+    ) => Promise<void>;
+
+    addInterval: (key: string, interval: Interval) => Promise<void>;
+    addIntervals: (key: string, intervals: Interval[]) => Promise<void>;
+
+    addManualRecord: (
+      key: string,
+      timestamp: number,
+      seconds: number
+    ) => Promise<void>;
+
+    getIntervals: (key: string) => Interval[];
+    getManualRecords: (key: string) => ManualRecord[];
+
+    getIntervalSeconds: (key: string) => number;
+    getManualSeconds: (key: string) => number;
+    getTotalSeconds: (key: string) => number;
+
+    remove: (key: string) => Promise<void>;
   };
+
   logDatabase: {
     log: Array<{ ts: number; value: string }>;
     add: (ts: number, value: string) => Promise<void>;
@@ -28,11 +60,8 @@ const DatabaseContext = createContext<DatabaseContextType | undefined>(
 export const DatabaseContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  // Use your existing hook logic here
   const timeBankDatabase = useTimeBankDatabase();
-  // Use your existing hook logic here
   const logDatabase = useLogDatabase();
-  const stopWatchDatabase = useStopWatchDatabase();
 
   return (
     <DatabaseContext.Provider value={{ timeBankDatabase, logDatabase }}>
@@ -41,11 +70,14 @@ export const DatabaseContextProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Custom hook to consume the context easily
 export const useDatabaseContext = () => {
   const context = useContext(DatabaseContext);
+
   if (!context) {
-    throw new Error("useBankedTimes must be used within a BankedTimesProvider");
+    throw new Error(
+      "useDatabaseContext must be used within a DatabaseContextProvider",
+    );
   }
+
   return context;
 };

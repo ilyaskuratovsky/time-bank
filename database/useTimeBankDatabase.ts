@@ -1,27 +1,55 @@
-import { useSQLiteContext, type SQLiteDatabase } from "expo-sqlite";
-import { useCallback, useState, useEffect } from "react";
-import { BankedTimes } from "./Types";
-interface UseBankedTimesOptions {}
+import { useSQLiteContext } from "expo-sqlite";
+import { useCallback, useEffect, useState } from "react";
 
-export function useTimeBankDatabase(options?: UseBankedTimesOptions) {
+export type Interval = {
+  start: number;
+  end: number;
+};
+
+export type ManualRecord = {
+  ts: number;
+  seconds: number; // positive = added, negative = removed
+};
+
+export type ProjectIntervals = Record<string, Interval[]>;
+export type ProjectManualRecords = Record<string, ManualRecord[]>;
+
+export function useTimeBankDatabase() {
   const db = useSQLiteContext();
-  const [bankedTimes, setBankedTimes] = useState<BankedTimes>({});
-  const [isLoading, setIsLoading] = useState(true); // Track initial load
+
+  const [intervalsByProject, setIntervalsByProject] =
+    useState<ProjectIntervals>({});
+
+  const [manualRecordsByProject, setManualRecordsByProject] =
+    useState<ProjectManualRecords>({});
+
+  const [isLoading, setIsLoading] = useState(true);
 
   const reload = useCallback(async () => {
     try {
-      const result = await db.getAllAsync<{ key: string; value: number }>(
-        "SELECT key, value FROM banked_time",
-      );
+      const result = await db.getAllAsync<{
+        key: string;
+        intervals: string | null;
+        manualRecords: string | null;
+      }>("SELECT key, intervals, manualRecords FROM banked_time");
 
-      const mapped = result.reduce((acc, { key, value }) => {
-        acc[key] = value;
-        return acc;
-      }, {} as BankedTimes);
+      const intervalsMapped: ProjectIntervals = {};
+      const manualMapped: ProjectManualRecords = {};
 
-      setBankedTimes(mapped);
+      for (const row of result) {
+        intervalsMapped[row.key] = row.intervals
+          ? JSON.parse(row.intervals)
+          : [];
+
+        manualMapped[row.key] = row.manualRecords
+          ? JSON.parse(row.manualRecords)
+          : [];
+      }
+
+      setIntervalsByProject(intervalsMapped);
+      setManualRecordsByProject(manualMapped);
     } catch (e) {
-      console.error("Failed to load banked times", e);
+      console.error("Failed to load time bank data", e);
     } finally {
       setIsLoading(false);
     }
@@ -31,27 +59,50 @@ export function useTimeBankDatabase(options?: UseBankedTimesOptions) {
     reload();
   }, [reload]);
 
-  const add = async (key: string, value: number): Promise<void> => {
+  const set = async (
+    key: string,
+    intervals: Interval[],
+    manualRecords: ManualRecord[] = manualRecordsByProject[key] ?? [],
+  ): Promise<void> => {
     await db.runAsync(
-      `INSERT INTO banked_time (key, value) 
-       VALUES (?, ?) 
-       ON CONFLICT(key) 
-       DO UPDATE SET value = value + excluded.value`,
-      [key, value],
+      `INSERT INTO banked_time (key, intervals, manualRecords)
+       VALUES (?, ?, ?)
+       ON CONFLICT(key) DO UPDATE SET
+         intervals = excluded.intervals,
+         manualRecords = excluded.manualRecords`,
+      [key, JSON.stringify(intervals), JSON.stringify(manualRecords)],
     );
+
     await reload();
   };
 
-  const set = async (key: string, value: number): Promise<void> => {
-    // Ensure the key exists; if not, insert it. If it exists, update it.
-    console.log(`Setting banked time for ${key} to ${value}`);
-    await db.runAsync(
-      `INSERT INTO banked_time (key, value) 
-       VALUES (?, ?) 
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-      [key, value],
-    );
-    await reload();
+  const setManualRecords = async (
+    key: string,
+    manualRecords: ManualRecord[],
+  ): Promise<void> => {
+    await set(key, intervalsByProject[key] ?? [], manualRecords);
+  };
+
+  const addInterval = async (key: string, interval: Interval): Promise<void> => {
+    await set(key, [...(intervalsByProject[key] ?? []), interval]);
+  };
+
+  const addIntervals = async (
+    key: string,
+    intervals: Interval[],
+  ): Promise<void> => {
+    await set(key, [...(intervalsByProject[key] ?? []), ...intervals]);
+  };
+
+  const addManualRecord = async (
+    key: string,
+    ts: number,
+    seconds: number
+  ): Promise<void> => {
+    await setManualRecords(key, [
+      ...(manualRecordsByProject[key] ?? []),
+      { ts, seconds },
+    ]);
   };
 
   const remove = async (key: string): Promise<void> => {
@@ -59,12 +110,64 @@ export function useTimeBankDatabase(options?: UseBankedTimesOptions) {
     await reload();
   };
 
-  const get = useCallback(
-    (key: string): number => {
-      return bankedTimes[key] ?? 0;
-    },
-    [bankedTimes],
+  const getIntervals = useCallback(
+    (key: string): Interval[] => intervalsByProject[key] ?? [],
+    [intervalsByProject],
   );
 
-  return { bankedTimes, reload, add, set, get, remove };
+  const getManualRecords = useCallback(
+    (key: string): ManualRecord[] => manualRecordsByProject[key] ?? [],
+    [manualRecordsByProject],
+  );
+
+  const getIntervalSeconds = useCallback(
+    (key: string): number => {
+      return Math.floor(
+        getIntervals(key).reduce(
+          (total, interval) => total + (interval.end - interval.start),
+          0,
+        ) / 1000,
+      );
+    },
+    [getIntervals],
+  );
+
+  const getManualSeconds = useCallback(
+    (key: string): number => {
+      return getManualRecords(key).reduce(
+        (total, record) => total + record.seconds,
+        0,
+      );
+    },
+    [getManualRecords],
+  );
+
+  const getTotalSeconds = useCallback(
+    (key: string): number => {
+      return getIntervalSeconds(key) + getManualSeconds(key);
+    },
+    [getIntervalSeconds, getManualSeconds],
+  );
+
+  return {
+    intervalsByProject,
+    manualRecordsByProject,
+    isLoading,
+    reload,
+
+    set,
+    setManualRecords,
+
+    addInterval,
+    addIntervals,
+    addManualRecord,
+
+    getIntervals,
+    getManualRecords,
+    getIntervalSeconds,
+    getManualSeconds,
+    getTotalSeconds,
+
+    remove,
+  };
 }

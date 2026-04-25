@@ -48,8 +48,9 @@ async function migrateDbIfNeeded(db: SQLiteDatabase) {
     );
 
     CREATE TABLE IF NOT EXISTS banked_time (
-      key TEXT PRIMARY KEY,
-      value INTEGER NOT NULL
+      key TEXT PRIMARY KEY NOT NULL,
+      intervals TEXT NOT NULL,
+      manualRecords TEXT NOT NULL DEFAULT '[]'
     );
 
     CREATE TABLE IF NOT EXISTS log (
