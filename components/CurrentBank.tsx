@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
-import { getSecondsInRange, getTodayRange } from "../utils/Utils";
+import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
 
 interface CurrentBankProps {
   project: string;
@@ -96,7 +96,17 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
   const display = isEditing ? formattedEditingTime : formattedTime;
 
-  return (
+const timelineIntervals = useMemo(() => {
+  const timelineIntervals = allIntervals.map((interval, i) => ({
+    start: toTimeString(interval.start),
+    end: toTimeString(interval.end),
+    color: "#3B82F6", // or vary per interval if you want
+  }));
+  console.log("calculated timeline intervals: ", JSON.stringify(timelineIntervals, null, 2));
+  return timelineIntervals;
+}, [allIntervals]);  
+
+return (
     <View style={styles.container}>
       <View style={styles.timeRow}>
         <Text style={styles.bankedTimeText}>{display.main}</Text>
@@ -104,11 +114,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
       </View>
 
       <DayIntervalsTimeline
-        intervals={[
-          { start: "06:30", end: "08:15", color: "#EF4444" },
-          { start: "08:15", end: "09:45", color: "#3B82F6" },
-          { start: "21:30", end: "01:15", color: "#10B981" },
-        ]}
+        intervals={timelineIntervals}
         height={18}
       />
 
