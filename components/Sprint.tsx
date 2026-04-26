@@ -49,6 +49,7 @@ const Sprint: React.FC = () => {
 const styles = StyleSheet.create({
   timerContainer: {
     width: "100%",
+    height: 360,
   },
 
   currentBankContainer: {

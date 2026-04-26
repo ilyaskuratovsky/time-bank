@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import { View, Text, StyleSheet, Button, ScrollView } from "react-native";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
@@ -117,38 +117,40 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
         <Text style={styles.headerTitle}>Banked Time</Text>
         <Text style={styles.headerSubtitle}>Today</Text>
       </View>
-
-      <View style={styles.timeRow}>
-        <Text style={styles.bankedTimeText}>{display.main}</Text>
-        <Text style={styles.secondsText}>{display.seconds}</Text>
-      </View>
-
-      <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
-
-      {isEditing ? (
-        <View style={styles.editContainer}>
-          <View style={styles.adjustRow}>
-            <Button title="+1m" onPress={() => adjustSeconds(60)} />
-            <Button title="-1m" onPress={() => adjustSeconds(-60)} />
-            <Button title="+1s" onPress={() => adjustSeconds(1)} />
-            <Button title="-1s" onPress={() => adjustSeconds(-1)} />
-          </View>
-
-          <View style={styles.editActions}>
-            <Button title="Cancel" onPress={cancelEditing} color="#6c757d" />
-            <Button title="Save" onPress={saveEditing} color="#007bff" />
-          </View>
+      <ScrollView>
+        <View style={styles.timeRow}>
+          <Text style={styles.bankedTimeText}>{display.main}</Text>
+          <Text style={styles.secondsText}>{display.seconds}</Text>
         </View>
-      ) : (
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonWrapper}>
-            <Button title="Clear" onPress={clearBankedTime} color="#d9534f" />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button title="Edit" onPress={startEditing} color="#007bff" />
-          </View>
+        <View style={styles.dayIntervalsTimelineContainer}>
+          <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
         </View>
-      )}
+
+        {isEditing ? (
+          <View style={styles.editContainer}>
+            <View style={styles.adjustRow}>
+              <Button title="+1m" onPress={() => adjustSeconds(60)} />
+              <Button title="-1m" onPress={() => adjustSeconds(-60)} />
+              <Button title="+1s" onPress={() => adjustSeconds(1)} />
+              <Button title="-1s" onPress={() => adjustSeconds(-1)} />
+            </View>
+
+            <View style={styles.editActions}>
+              <Button title="Cancel" onPress={cancelEditing} color="#6c757d" />
+              <Button title="Save" onPress={saveEditing} color="#007bff" />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.buttonRow}>
+            <View style={styles.buttonWrapper}>
+              <Button title="Clear" onPress={clearBankedTime} color="#d9534f" />
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button title="Edit" onPress={startEditing} color="#007bff" />
+            </View>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 };
@@ -169,11 +171,13 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: "row",
     alignItems: "flex-end",
+    justifyContent: "center",
+    //backgroundColor:"cyan",
   },
   bankedTimeText: {
-    fontSize: 64,
+    fontSize: 44,
     fontWeight: "bold",
-    color: "#28a745",
+    color: "#007bff",
   },
   secondsText: {
     fontSize: 20,
@@ -211,15 +215,20 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: "600",
     color: "#495057",
   },
 
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 16,
     color: "#868e96",
     marginTop: 2,
+  },
+  dayIntervalsTimelineContainer: {
+    alignItems: "center",
+    paddingLeft: 18,
+    paddingRight: 18,
   },
 });
 

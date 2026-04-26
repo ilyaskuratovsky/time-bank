@@ -61,10 +61,10 @@ function toMinutes(input: TimeInput): number {
 }
 
 function formatHourLabel(hour: number) {
-  if (hour === 0 || hour === 24) return "12a";
-  if (hour < 12) return `${hour}a`;
-  if (hour === 12) return "12p";
-  return `${hour - 12}p`;
+  if (hour === 0 || hour === 24) return "12am";
+  if (hour < 12) return `${hour}am`;
+  if (hour === 12) return "12pm";
+  return `${hour - 12}pm`;
 }
 
 function getEvenlySpacedHours(maxLabels: number) {

@@ -14,9 +14,9 @@ interface TimerCircleProps {
   onStop: () => Promise<void>;
 }
 
-const SIZE = 200;
-const STROKE_WIDTH = 9;
-const RADIUS = 88;
+const SIZE = 172;
+const STROKE_WIDTH = 7;
+const RADIUS = 74;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const TimerCircle: React.FC<TimerCircleProps> = ({
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   timerText: {
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",

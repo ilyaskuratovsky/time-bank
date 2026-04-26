@@ -260,7 +260,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
               >
                 {key}
               </Text>
-            )}{" "}
+            )}
           </Pressable>
         ))}
       </View>
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingTop: 10,
-    paddingBottom: 0 ,
+    paddingBottom: 4 ,
   },
 
   durationButton: {
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "90%",
-    marginTop: 0,
+    marginTop: 6,
   },
 
   sideButton: {
@@ -465,9 +465,9 @@ const styles = StyleSheet.create({
   },
 
   playPauseButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#28a745",
     alignItems: "center",
     justifyContent: "center",
@@ -481,9 +481,9 @@ const styles = StyleSheet.create({
   },
   /* 🔥 Bank = PRIMARY (circle + standout) */
   bankButtonCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#ffc107",
     alignItems: "center",
     justifyContent: "center",
@@ -496,9 +496,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   resetButtonCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#e9ecef", // soft gray
     alignItems: "center",
     justifyContent: "center",
