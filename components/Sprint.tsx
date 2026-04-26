@@ -32,12 +32,13 @@ const Sprint: React.FC = () => {
         flex: 1,
         paddingBottom: insets.bottom,
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
       }}
     >
       <View style={styles.timerContainer}>
         <ProjectTimer />
       </View>
+
       <View style={styles.currentBankContainer}>
         <CurrentBank project={projects[activeIndex].id} />
       </View>
@@ -46,8 +47,15 @@ const Sprint: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  timerContainer: { width: "100%", height: 400 },
-  currentBankContainer: { width: "90%", flex: 1 },
+  timerContainer: {
+    width: "100%",
+  },
+
+  currentBankContainer: {
+    width: "90%",
+    marginTop: 20,
+    flex: 1, // fills remaining space
+  },
 });
 
 export default Sprint;

@@ -26,30 +26,22 @@ const ProjectTimer: React.FC = () => {
   useEffect(() => {});
 
   return (
-    <View
-      style={{
-        flex: 1,
-        paddingBottom: insets.bottom,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <ProjectSwitcherHeader
-        projects={projects}
-        activeIndex={activeIndex}
-        onChange={(index) => {
-          setActiveIndex(index);
-        }}
-      />
-      {/*
-      <ProjectSwitcherDemo />
-      */}
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={styles.headerContainer}>
+        <ProjectSwitcherHeader
+          projects={projects}
+          activeIndex={activeIndex}
+          onChange={setActiveIndex}
+        />
+      </View>
       <View style={styles.timerContainer}>
         <Timer
           project={projects[activeIndex].id}
-          bankTimeInterval={async (intervals: { start: number; end: number }[]) => {
-            console.log("Banking intervals: ", intervals);
-            await timeBankDatabase.addIntervals(projects[activeIndex].id, intervals);
+          bankTimeInterval={async (intervals) => {
+            await timeBankDatabase.addIntervals(
+              projects[activeIndex].id,
+              intervals,
+            );
           }}
         />
       </View>
@@ -58,9 +50,23 @@ const ProjectTimer: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  timerContainer: { width: "90%" },
-  currentBankContainer: { width: "90%", flex: 1 },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    //backgroundColor: "pink",
+  },
+
+  headerContainer: {
+    width: "100%",
+    paddingTop: 18,
+    paddingBottom: 4,
+    paddingHorizontal: 16,
+  },
+
+  timerContainer: {
+    width: "90%",
+    marginTop: 0,
+  },
 });
-
 export default ProjectTimer;
-

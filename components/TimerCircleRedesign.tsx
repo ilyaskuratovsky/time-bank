@@ -80,6 +80,13 @@ const TimerCircle: React.FC<TimerCircleProps> = ({
             : formatTimeMilliseconds(remainingTimeMs)}
         </Text>
 
+        <View style={styles.controlButton}>
+          <Ionicons
+            name={state === "running" ? "pause" : "play"}
+            size={16}
+            color="#fff"
+          />
+        </View>
         <Text style={styles.elapsedText}>
           {formatTimeMilliseconds(elapsedTimeMs)}
         </Text>
@@ -115,7 +122,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   elapsedText: {
-    fontSize: 22,
+    fontSize: 16,
     color: "#7a8088",
     marginTop: 6,
     fontFamily: "TimerFont",

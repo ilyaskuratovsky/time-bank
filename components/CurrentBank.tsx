@@ -83,8 +83,12 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     const deltaSeconds = clamped - currentSeconds;
 
     if (deltaSeconds !== 0) {
-      console.log("adding manual record: ", { project, deltaSeconds, editingStartedAt });
-      await addManualRecord(project, editingStartedAt, deltaSeconds );
+      console.log("adding manual record: ", {
+        project,
+        deltaSeconds,
+        editingStartedAt,
+      });
+      await addManualRecord(project, editingStartedAt, deltaSeconds);
     }
 
     setIsEditing(false);
@@ -97,26 +101,29 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
   const display = isEditing ? formattedEditingTime : formattedTime;
 
-const timelineIntervals = useMemo(() => {
-  const timelineIntervals = allIntervals.map((interval, i) => ({
-    start: toTimeString(interval.start),
-    end: toTimeString(interval.end),
-    color: "#3B82F6", // or vary per interval if you want
-  }));
-  return timelineIntervals;
-}, [allIntervals]);  
+  const timelineIntervals = useMemo(() => {
+    const timelineIntervals = allIntervals.map((interval, i) => ({
+      start: toTimeString(interval.start),
+      end: toTimeString(interval.end),
+      color: "#3B82F6", // or vary per interval if you want
+    }));
+    return timelineIntervals;
+  }, [allIntervals]);
 
-return (
+  return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Banked Time</Text>
+        <Text style={styles.headerSubtitle}>Today</Text>
+      </View>
+
       <View style={styles.timeRow}>
         <Text style={styles.bankedTimeText}>{display.main}</Text>
         <Text style={styles.secondsText}>{display.seconds}</Text>
       </View>
 
-      <DayIntervalsTimeline
-        intervals={timelineIntervals}
-        height={18}
-      />
+      <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
 
       {isEditing ? (
         <View style={styles.editContainer}>
@@ -155,13 +162,9 @@ const styles = StyleSheet.create({
     borderColor: "#a0d9b4",
     borderRadius: 10,
     backgroundColor: "#e6ffe6",
+
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: "flex-start", // 👈 key change
   },
   timeRow: {
     flexDirection: "row",
@@ -201,6 +204,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+  },
+  header: {
+    width: "100%",
+    marginBottom: 8,
+  },
+
+  headerTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#495057",
+  },
+
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#868e96",
+    marginTop: 2,
   },
 });
 

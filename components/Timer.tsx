@@ -13,6 +13,7 @@ import TimerCircle from "./TimerCircle";
 import { useStopWatch } from "../database/useStopWatch";
 import * as Notifications from "expo-notifications";
 import nullthrows from "../utils/nullthrows";
+import { Ionicons } from "@expo/vector-icons";
 
 interface TimerProps {
   project: string;
@@ -244,55 +245,72 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
               selectedDuration === key && styles.durationButtonActive,
             ]}
           >
-            <Text
-              style={[
-                styles.durationText,
-                selectedDuration === key && styles.durationTextActive,
-              ]}
-            >
-              {key}
-            </Text>
+            {key === "Infinity" ? (
+              <Ionicons
+                name="infinite"
+                size={18}
+                color={selectedDuration === key ? "#fff" : "#333"}
+              />
+            ) : (
+              <Text
+                style={[
+                  styles.durationText,
+                  selectedDuration === key && styles.durationTextActive,
+                ]}
+              >
+                {key}
+              </Text>
+            )}{" "}
           </Pressable>
         ))}
       </View>
-
-      <TimerCircle
-        remainingTimeMs={displayRemainingTime}
-        elapsedTimeMs={displayElapsedTime}
-        durationMs={durationMs}
-        isInfinity={isInfinity}
-      />
-      <View style={styles.buttonContainer}>
-        <Pressable
-          onPress={handleClear}
-          style={[styles.button, styles.clearButton]}
-        >
-          <Text style={styles.buttonText}>Clear</Text>
+      <View style={styles.timerCircleContainer}>
+        <TimerCircle
+          remainingTimeMs={displayRemainingTime}
+          elapsedTimeMs={displayElapsedTime}
+          durationMs={durationMs}
+          isInfinity={isInfinity}
+          state={stopWatchState}
+          onStart={handleStart}
+          onStop={handleStop}
+        />
+      </View>
+      <View style={styles.buttonRow}>
+        {/* Reset */}
+        <Pressable onPress={handleClear} style={styles.resetButtonCircle}>
+          <Ionicons name="trash-outline" size={20} color="#b0b5ba" />
+          <Text style={styles.sideText}>Reset</Text>
         </Pressable>
 
-        {stopWatchState === "stopped" && (
-          <Pressable
-            onPress={handleStart}
-            style={[styles.button, styles.startButton]}
-          >
-            <Text style={styles.buttonText}>Start</Text>
-          </Pressable>
-        )}
+        {/* Start / Pause */}
+        <Pressable
+          onPress={stopWatchState === "running" ? handleStop : handleStart}
+          style={styles.playPauseButton}
+        >
+          <Ionicons
+            name={stopWatchState === "running" ? "pause" : "play"}
+            size={24}
+            color="#fff"
+          />
+          {/*
+          <Text style={styles.playPauseText}>
+            {stopWatchState === "running" ? "Pause" : "Start"}
+          </Text>
+          */}
+        </Pressable>
 
-        {stopWatchState === "running" && (
-          <Pressable
-            onPress={handleStop}
-            style={[styles.button, styles.stopButton]}
-          >
-            <Text style={styles.buttonText}>Pause</Text>
-          </Pressable>
-        )}
-
+        {/* Bank */}
         <Pressable
           onPress={handleBankTimeInterval}
-          style={[styles.button, styles.bankButton]}
+          disabled={displayElapsedTime === 0}
+          style={[
+            styles.bankButtonCircle,
+            ,
+            stopWatchState !== "running" && { opacity: 0.4 },
+          ]}
         >
-          <Text style={styles.buttonText}>Bank</Text>
+          <Ionicons name="arrow-down" size={20} color="#7a8088" />
+          <Text style={styles.sideText}>Bank</Text>
         </Pressable>
       </View>
     </View>
@@ -307,7 +325,7 @@ const styles = StyleSheet.create({
     //borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
-    //backgroundColor: "#e6ffe6",
+    //backgroundColor: "cyan",
   },
   durationContainer: {
     flexDirection: "row",
@@ -315,24 +333,30 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingTop: 10,
+    paddingBottom: 0 ,
   },
+
   durationButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: "#ccc",
-    minWidth: 60,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#f1f3f5", // light gray
     alignItems: "center",
+    justifyContent: "center",
   },
+
   durationButtonActive: {
-    backgroundColor: "#007bff",
+     backgroundColor: "#007bff",
   },
+
   durationText: {
-    color: "#333",
+    color: "#495057", // strong readable gray
     fontWeight: "600",
+    fontSize: 14,
   },
+
   durationTextActive: {
-    color: "#fff",
+    color: "#ffffff", // darker when active
   },
   timerText: {
     fontSize: 72,
@@ -356,36 +380,135 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 10,
     justifyContent: "space-between",
-    paddingBottom: 15,
+    paddingBottom: 0,
   },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 100,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  startButton: {
-    backgroundColor: "#28a745",
-    minWidth: 80,
-  },
-  stopButton: {
-    backgroundColor: "#dc3545",
-    minWidth: 80,
-  },
+
   bankButton: {
     backgroundColor: "#ffc107",
-    minWidth: 80,
+    minWidth: 50,
   },
   clearButton: {
     backgroundColor: "#6c757d",
     minWidth: 80,
+  },
+  actionsContainer: {
+    marginTop: 6,
+    alignItems: "center",
+    width: "100%",
+    flexDirection: "row",
+    //backgroundColor:"cyan"
+  },
+  timerCircleContainer: {
+    marginTop: 0,
+    alignItems: "center",
+    width: "100%",
+    //backgroundColor:"pink"
+  },
+
+  bankButtonLarge: {
+    backgroundColor: "#ffc107",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 28,
+    minWidth: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  bankContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  bankText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+  },
+
+  resetButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+
+  resetContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  resetText: {
+    color: "#b0b5ba",
+    fontSize: 14,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "90%",
+    marginTop: 0,
+  },
+
+  sideButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    minWidth: 60,
+  },
+
+  sideText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#7a8088",
+  },
+
+  playPauseButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#28a745",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  playPauseText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: "600",
+  },
+  /* 🔥 Bank = PRIMARY (circle + standout) */
+  bankButtonCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#ffc107",
+    alignItems: "center",
+    justifyContent: "center",
+
+    // subtle elevation
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  resetButtonCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#e9ecef", // soft gray
+    alignItems: "center",
+    justifyContent: "center",
+
+    // lighter, almost no elevation
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
 });
 
