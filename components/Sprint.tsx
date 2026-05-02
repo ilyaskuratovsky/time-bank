@@ -1,30 +1,43 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Animated,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Timer from "./Timer";
 import CurrentBank from "./CurrentBank";
-import { useDatabaseContext } from "../database/DatabaseContext";
-import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
-import ProjectSwitcherDemo from "./ProjectSwitcherDemo";
+import CurrentBankMini from "./CurrentBankMini";
 import ProjectTimer from "./ProjectTimer";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const MIN_HEIGHT = 200;
+const MAX_HEIGHT = SCREEN_HEIGHT * 0.5;
 
 const Sprint: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { timeBankDatabase } = useDatabaseContext();
 
   const projects = [
-    {
-      id: "Work",
-      name: "Work",
-    },
-    {
-      id: "Side Project",
-      name: "Side Project",
-    },
+    { id: "Work", name: "Work" },
+    { id: "Side Project", name: "Side Project" },
   ];
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  useEffect(() => {});
+  const [activeIndex] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+
+  const animatedHeight = useRef(new Animated.Value(MIN_HEIGHT)).current;
+
+  const togglePanel = () => {
+    Animated.timing(animatedHeight, {
+      toValue: expanded ? MIN_HEIGHT : MAX_HEIGHT,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+
+    setExpanded(!expanded);
+  };
 
   return (
     <View
@@ -32,16 +45,27 @@ const Sprint: React.FC = () => {
         flex: 1,
         paddingBottom: insets.bottom,
         alignItems: "center",
-        justifyContent: "flex-start",
       }}
     >
+      {/* Timer */}
       <View style={styles.timerContainer}>
         <ProjectTimer />
       </View>
 
-      <View style={styles.currentBankContainer}>
-        <CurrentBank project={projects[activeIndex].id} />
-      </View>
+      {/* Bottom Sheet */}
+      <Animated.View style={[styles.bottomPanel, { height: animatedHeight }]}>
+        {/* Handle / Toggle Area */}
+        <TouchableOpacity style={styles.handle} onPress={togglePanel}>
+          <View style={styles.handleBar} />
+        </TouchableOpacity>
+
+        {/* Content */}
+        {expanded ? (
+          <CurrentBank project={projects[activeIndex].id} />
+        ) : (
+            <CurrentBankMini project={projects[activeIndex].id} />
+        )}
+      </Animated.View>
     </View>
   );
 };
@@ -52,10 +76,26 @@ const styles = StyleSheet.create({
     height: 360,
   },
 
-  currentBankContainer: {
-    width: "90%",
-    marginTop: 20,
-    flex: 1, // fills remaining space
+  bottomPanel: {
+    width: "100%",
+    position: "absolute",
+    bottom: 0,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+
+  handle: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+
+  handleBar: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#ccc",
   },
 });
 

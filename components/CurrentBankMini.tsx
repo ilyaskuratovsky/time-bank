@@ -4,7 +4,7 @@ import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
 
-interface CurrentBankProps {
+interface CurrentBankMiniProps {
   project: string;
 }
 
@@ -19,7 +19,7 @@ const formatPrettyTime = (totalSeconds: number) => {
   };
 };
 
-const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
+const CurrentBankMini: React.FC<CurrentBankMiniProps> = ({ project }) => {
   const {
     timeBankDatabase: {
       intervalsByProject,
@@ -50,56 +50,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
   const currentSeconds = intervalSecondsToday + manualSecondsToday;
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingSeconds, setEditingSeconds] = useState(currentSeconds);
-  const [editingStartedAt, setEditingStartedAt] = useState<number | null>(null);
-
   const formattedTime = formatPrettyTime(currentSeconds);
-  const formattedEditingTime = useMemo(
-    () => formatPrettyTime(editingSeconds),
-    [editingSeconds],
-  );
-
-  const clearBankedTime = async () => {
-    await set(project, [], []);
-  };
-
-  const startEditing = () => {
-    setEditingSeconds(currentSeconds);
-    setEditingStartedAt(Date.now());
-    setIsEditing(true);
-  };
-
-  const cancelEditing = () => {
-    setIsEditing(false);
-    setEditingSeconds(currentSeconds);
-    setEditingStartedAt(null);
-  };
-
-  const saveEditing = async () => {
-    if (editingStartedAt == null) return;
-
-    const clamped = Math.max(0, editingSeconds);
-    const deltaSeconds = clamped - currentSeconds;
-
-    if (deltaSeconds !== 0) {
-      console.log("adding manual record: ", {
-        project,
-        deltaSeconds,
-        editingStartedAt,
-      });
-      await addManualRecord(project, editingStartedAt, deltaSeconds);
-    }
-
-    setIsEditing(false);
-    setEditingStartedAt(null);
-  };
-
-  const adjustSeconds = (delta: number) => {
-    setEditingSeconds((prev) => Math.max(0, prev + delta));
-  };
-
-  const display = isEditing ? formattedEditingTime : formattedTime;
 
   const timelineIntervals = useMemo(() => {
     const timelineIntervals = allIntervals.map((interval, i) => ({
@@ -112,44 +63,13 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>Today</Text>
+      <View style={styles.timeRow}>
+        <Text style={styles.bankedTimeText}>{formattedTime.main}</Text>
+        <Text style={styles.secondsText}>{formattedTime.seconds}</Text>
       </View>
-      <ScrollView>
-        <View style={styles.timeRow}>
-          <Text style={styles.bankedTimeText}>{display.main}</Text>
-          <Text style={styles.secondsText}>{display.seconds}</Text>
-        </View>
-        <View style={styles.dayIntervalsTimelineContainer}>
-          <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
-        </View>
-
-        {isEditing ? (
-          <View style={styles.editContainer}>
-            <View style={styles.adjustRow}>
-              <Button title="+1m" onPress={() => adjustSeconds(60)} />
-              <Button title="-1m" onPress={() => adjustSeconds(-60)} />
-              <Button title="+1s" onPress={() => adjustSeconds(1)} />
-              <Button title="-1s" onPress={() => adjustSeconds(-1)} />
-            </View>
-
-            <View style={styles.editActions}>
-              <Button title="Cancel" onPress={cancelEditing} color="#6c757d" />
-              <Button title="Save" onPress={saveEditing} color="#007bff" />
-            </View>
-          </View>
-        ) : (
-          <View style={styles.buttonRow}>
-            <View style={styles.buttonWrapper}>
-              <Button title="Clear" onPress={clearBankedTime} color="#d9534f" />
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button title="Edit" onPress={startEditing} color="#007bff" />
-            </View>
-          </View>
-        )}
-      </ScrollView>
+      <View style={styles.dayIntervalsTimelineContainer}>
+        <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
+      </View>
     </View>
   );
 };
@@ -225,10 +145,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   dayIntervalsTimelineContainer: {
-    alignItems: "center",
+    width: "100%",
     paddingLeft: 18,
     paddingRight: 18,
   },
 });
 
-export default CurrentBank;
+export default CurrentBankMini;
