@@ -1,29 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Modal,
+  Text,
+  TouchableOpacity,
+  Pressable,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Timer from "./Timer";
-import CurrentBank from "./CurrentBank";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
-import ProjectSwitcherDemo from "./ProjectSwitcherDemo";
 
 const ProjectTimer: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { timeBankDatabase } = useDatabaseContext();
 
   const projects = [
-    {
-      id: "Work",
-      name: "Work",
-    },
-    {
-      id: "Side Project",
-      name: "Side Project",
-    },
+    { id: "Work", name: "Work" },
+    { id: "Side Project", name: "Side Project" },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
+
   useEffect(() => {});
+
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -32,8 +33,10 @@ const ProjectTimer: React.FC = () => {
           projects={projects}
           activeIndex={activeIndex}
           onChange={setActiveIndex}
+          onManageProjects={() => {}}
         />
       </View>
+
       <View style={styles.timerContainer}>
         <Timer
           project={projects[activeIndex].id}
@@ -54,7 +57,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    //backgroundColor: "pink",
   },
 
   headerContainer: {
@@ -68,5 +70,74 @@ const styles = StyleSheet.create({
     width: "90%",
     marginTop: 0,
   },
+
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+
+  sheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 10,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+
+  sheetHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "#D1D5DB",
+    marginBottom: 16,
+  },
+
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 12,
+  },
+
+  projectRow: {
+    minHeight: 52,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+
+  activeProjectRow: {
+    backgroundColor: "#F3F4F6",
+  },
+
+  projectName: {
+    fontSize: 17,
+    fontWeight: "500",
+    color: "#111827",
+  },
+
+  activeProjectName: {
+    fontWeight: "700",
+  },
+
+  checkmark: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
 });
+
 export default ProjectTimer;
