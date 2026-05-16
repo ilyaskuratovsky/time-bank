@@ -5,6 +5,7 @@ import {
   Animated,
   TouchableOpacity,
   Dimensions,
+  Text,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CurrentBank from "./CurrentBank";
@@ -63,7 +64,7 @@ const Sprint: React.FC = () => {
         {expanded ? (
           <CurrentBank project={projects[activeIndex].id} />
         ) : (
-            <CurrentBankMini project={projects[activeIndex].id} />
+          <CurrentBankMini project={projects[activeIndex].id} />
         )}
       </Animated.View>
     </View>

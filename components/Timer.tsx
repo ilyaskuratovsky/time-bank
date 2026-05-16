@@ -7,6 +7,7 @@ import {
   Pressable,
   Vibration,
   AppState,
+  TouchableOpacity,
 } from "react-native";
 import { formatTimeMilliseconds } from "../utils/Utils";
 import TimerCircle from "./TimerCircle";
@@ -313,6 +314,19 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
           <Text style={styles.sideText}>Bank</Text>
         </Pressable>
       </View>
+      <TouchableOpacity
+        onPress={async () => {
+          await bankTimeInterval([
+            {
+              start: Date.now() - 15 * 60 * 1000,
+              end: Date.now(),
+            },
+          ]);
+        }}
+        style={{ marginTop: 30 }}
+      >
+        <Text>add 15</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -333,7 +347,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingTop: 10,
-    paddingBottom: 4 ,
+    paddingBottom: 4,
   },
 
   durationButton: {
@@ -346,7 +360,7 @@ const styles = StyleSheet.create({
   },
 
   durationButtonActive: {
-     backgroundColor: "#007bff",
+    backgroundColor: "#007bff",
   },
 
   durationText: {

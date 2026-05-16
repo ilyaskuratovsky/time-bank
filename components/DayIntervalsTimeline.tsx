@@ -5,9 +5,11 @@ import {
   Text,
   View,
   ViewStyle,
+  ScrollView,
 } from "react-native";
+import { mapIntervalsToReadableTime } from "../utils/Utils";
 
-type TimeInput = string | number | Date;
+type TimeInput = number;
 
 export type TimeInterval = {
   start: TimeInput;
@@ -18,6 +20,8 @@ export type TimeInterval = {
 
 type Props = {
   intervals: TimeInterval[];
+  startTimestampMs: number; // Absolute start of the logical day timeline (e.g. 3:00 AM)
+  endTimestampMs: number;   // Absolute end of the logical day timeline (e.g. 2:59:59 AM next day)
   height?: number;
   showHourLabels?: boolean;
   maxLabels?: number;
@@ -28,53 +32,39 @@ type Props = {
   roundness?: number;
 };
 
-const MINUTES_IN_DAY = 24 * 60;
-
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function toMinutes(input: TimeInput): number {
-  if (typeof input === "number") {
-    return ((input % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
-  }
-
-  if (input instanceof Date) {
-    return input.getHours() * 60 + input.getMinutes();
-  }
-
-  const match = input.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-  if (!match) {
-    throw new Error(
-      `Invalid time "${input}". Use "HH:mm", "HH:mm:ss", minutes since midnight, or Date.`
-    );
-  }
-
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    throw new Error(`Invalid time "${input}".`);
-  }
-
-  return hours * 60 + minutes;
+/**
+ * Converts an absolute timestamp to its relative minute position along the custom logical timeline duration.
+ */
+function toTimelineMinutes(timestamp: number, timelineStartMs: number, totalDurationMin: number): number {
+  const diffMs = timestamp - timelineStartMs;
+  const minutes = diffMs / 1000 / 60;
+  return clamp(minutes, 0, totalDurationMin);
 }
 
 function formatHourLabel(hour: number) {
-  if (hour === 0 || hour === 24) return "12am";
-  if (hour < 12) return `${hour}am`;
-  if (hour === 12) return "12pm";
-  return `${hour - 12}pm`;
+  const normalizedHour = ((hour % 24) + 24) % 24;
+  if (normalizedHour === 0) return "12am";
+  if (normalizedHour < 12) return `${normalizedHour}am`;
+  if (normalizedHour === 12) return "12pm";
+  return `${normalizedHour - 12}pm`;
 }
 
-function getEvenlySpacedHours(maxLabels: number) {
-  if (maxLabels <= 1) return [0];
+/**
+ * Returns evenly spaced hour values offset by the starting hour of the timeline.
+ */
+function getEvenlySpacedHours(maxLabels: number, startTimestampMs: number) {
+  const startHour = new Date(startTimestampMs).getHours();
+  if (maxLabels <= 1) return [startHour];
 
   const step = 24 / (maxLabels - 1);
 
   return Array.from({ length: maxLabels }, (_, i) => {
-    const value = Math.round(i * step);
-    return i === maxLabels - 1 ? 24 : value;
+    const rawValue = startHour + i * step;
+    return Math.round(rawValue);
   });
 }
 
@@ -85,37 +75,26 @@ type NormalizedSegment = {
   label?: string;
 };
 
-function normalizeIntervals(intervals: TimeInterval[]): NormalizedSegment[] {
+function normalizeIntervals(
+  intervals: TimeInterval[],
+  timelineStartMs: number,
+  totalDurationMin: number
+): NormalizedSegment[] {
   const segments: NormalizedSegment[] = [];
 
   for (const interval of intervals) {
-    const startMin = toMinutes(interval.start);
-    const endMin = toMinutes(interval.end);
+    const startMin = toTimelineMinutes(interval.start, timelineStartMs, totalDurationMin);
+    const endMin = toTimelineMinutes(interval.end, timelineStartMs, totalDurationMin);
     const color = interval.color ?? "#4A90E2";
 
     if (startMin === endMin) continue;
 
-    if (endMin < startMin) {
-      segments.push({
-        startMin,
-        endMin: MINUTES_IN_DAY,
-        color,
-        label: interval.label,
-      });
-      segments.push({
-        startMin: 0,
-        endMin,
-        color,
-        label: interval.label,
-      });
-    } else {
-      segments.push({
-        startMin,
-        endMin,
-        color,
-        label: interval.label,
-      });
-    }
+    segments.push({
+      startMin,
+      endMin,
+      color,
+      label: interval.label,
+    });
   }
 
   return segments.sort((a, b) => a.startMin - b.startMin);
@@ -123,6 +102,8 @@ function normalizeIntervals(intervals: TimeInterval[]): NormalizedSegment[] {
 
 export const DayIntervalsTimeline: React.FC<Props> = ({
   intervals,
+  startTimestampMs,
+  endTimestampMs,
   height = 16,
   showHourLabels = true,
   maxLabels = 4,
@@ -134,11 +115,19 @@ export const DayIntervalsTimeline: React.FC<Props> = ({
 }) => {
   const [trackWidth, setTrackWidth] = useState(0);
 
-  const segments = useMemo(() => normalizeIntervals(intervals), [intervals]);
+  // Total absolute minute duration specified by your provider (typically 1440 mins)
+  const totalDurationMin = useMemo(() => {
+    return (endTimestampMs - startTimestampMs) / 1000 / 60;
+  }, [startTimestampMs, endTimestampMs]);
+
+  const segments = useMemo(
+    () => normalizeIntervals(intervals, startTimestampMs, totalDurationMin),
+    [intervals, startTimestampMs, totalDurationMin]
+  );
 
   const labelHours = useMemo(
-    () => getEvenlySpacedHours(Math.max(1, Math.min(maxLabels, 4))),
-    [maxLabels]
+    () => getEvenlySpacedHours(Math.max(1, Math.min(maxLabels, 4)), startTimestampMs),
+    [maxLabels, startTimestampMs]
   );
 
   const handleTrackLayout = (event: LayoutChangeEvent) => {
@@ -146,86 +135,102 @@ export const DayIntervalsTimeline: React.FC<Props> = ({
   };
 
   return (
-    <View style={[styles.container, style]}>
-      <View
-        style={[
-          styles.track,
-          {
-            height,
-            backgroundColor: trackColor,
-            borderRadius: roundness,
-          },
-        ]}
-        onLayout={handleTrackLayout}
-      >
-        {trackWidth > 0 &&
-          segments.map((segment, index) => {
-            const left = (segment.startMin / MINUTES_IN_DAY) * trackWidth;
-            const width =
-              ((segment.endMin - segment.startMin) / MINUTES_IN_DAY) *
-              trackWidth;
+    <>
+      <ScrollView horizontal={true} style={{}}>
+        <Text style={{ fontSize: 10, color: "#000000" }}>
+          {JSON.stringify(mapIntervalsToReadableTime(intervals))}
+        </Text>
+      </ScrollView>
+      <ScrollView horizontal={true} style={{}}>
+        <Text style={{ fontSize: 10, color: "#000000" }}>
+          {JSON.stringify(segments)}
+        </Text>
+      </ScrollView>
+      <View style={[styles.container, style]}>
+        <View
+          style={[
+            styles.track,
+            {
+              height,
+              backgroundColor: trackColor,
+              borderRadius: roundness,
+            },
+          ]}
+          onLayout={handleTrackLayout}
+        >
+          {trackWidth > 0 &&
+            segments.map((segment, index) => {
+              const left = (segment.startMin / totalDurationMin) * trackWidth;
+              const width =
+                ((segment.endMin - segment.startMin) / totalDurationMin) *
+                trackWidth;
 
-            return (
-              <View
-                key={`${segment.startMin}-${segment.endMin}-${index}`}
-                style={[
-                  styles.segment,
-                  {
-                    left: clamp(left, 0, trackWidth),
-                    width: clamp(width, 0, trackWidth),
-                    height,
-                    backgroundColor: segment.color,
-                    borderRadius: roundness,
-                  },
-                ]}
-              />
-            );
-          })}
+              return (
+                <View
+                  key={`${segment.startMin}-${segment.endMin}-${index}`}
+                  style={[
+                    styles.segment,
+                    {
+                      left: clamp(left, 0, trackWidth),
+                      width: clamp(width, 0, trackWidth),
+                      height,
+                      backgroundColor: segment.color,
+                      borderRadius: roundness,
+                    },
+                  ]}
+                />
+              );
+            })}
 
-        {trackWidth > 0 &&
-          labelHours.map((hour, i) => {
-            const x = (hour / 24) * trackWidth;
+          {trackWidth > 0 &&
+            labelHours.map((hour, i) => {
+              const startHour = new Date(startTimestampMs).getHours();
+              const relativeHourOffset = hour - startHour;
+              const x = (relativeHourOffset / 24) * trackWidth;
 
-            return (
-              <View
-                key={`tick-${hour}-${i}`}
-                style={[
-                  styles.tick,
-                  {
-                    left: clamp(x - 0.5, 0, trackWidth),
-                    backgroundColor: tickColor,
-                    height: height + 8,
-                  },
-                ]}
-              />
-            );
-          })}
-      </View>
-
-      {showHourLabels && trackWidth > 0 && (
-        <View style={styles.labelsRow}>
-          {labelHours.map((hour, i) => {
-            const leftPct = (hour / 24) * 100;
-
-            return (
-              <View
-                key={`label-${hour}-${i}`}
-                style={[
-                  styles.labelWrap,
-                  {
-                    left: `${leftPct}%`,
-                  },
-                ]}
-              >
-                <Text style={[styles.label, { color: labelColor }]}>
-                  {formatHourLabel(hour)}
-                </Text>
-              </View>
-            );
-          })}
+              return (
+                <View
+                  key={`tick-${hour}-${i}`}
+                  style={[
+                    styles.tick,
+                    {
+                      left: clamp(x - 0.5, 0, trackWidth),
+                      backgroundColor: tickColor,
+                      height: height + 8,
+                    },
+                  ]}
+                />
+              );
+            })}
         </View>
-      )}
-    </View>
+
+        {showHourLabels && trackWidth > 0 && (
+          <View style={styles.labelsRow}>
+            {labelHours.map((hour, i) => {
+              const startHour = new Date(startTimestampMs).getHours();
+              const relativeHourOffset = hour - startHour;
+              const leftPct = (relativeHourOffset / 24) * 100;
+
+              return (
+                <View
+                  key={`label-${hour}-${i}`}
+                  style={[
+                    styles.labelWrap,
+                    {
+                      left: `${clamp(leftPct, 0, 100)}%`,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.label, { color: labelColor }]}>
+                    {formatHourLabel(hour)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+    </>
   );
 };
 

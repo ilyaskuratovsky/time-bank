@@ -103,8 +103,8 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
   const timelineIntervals = useMemo(() => {
     const timelineIntervals = allIntervals.map((interval, i) => ({
-      start: toTimeString(interval.start),
-      end: toTimeString(interval.end),
+      start: interval.start,
+      end: interval.end,
       color: "#3B82F6", // or vary per interval if you want
     }));
     return timelineIntervals;

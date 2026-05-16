@@ -1,23 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, Button, ScrollView } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons"; 
 import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
+import { TimeSpent } from "./TimeSpent";
+import { useToday } from "../database/context/TodayContext";
 
 interface CurrentBankMiniProps {
   project: string;
 }
-
-const formatPrettyTime = (totalSeconds: number) => {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.round(totalSeconds % 60);
-
-  return {
-    main: `${hours}h ${minutes}m`,
-    seconds: `${seconds}s`,
-  };
-};
 
 const CurrentBankMini: React.FC<CurrentBankMiniProps> = ({ project }) => {
   const {
@@ -25,50 +17,68 @@ const CurrentBankMini: React.FC<CurrentBankMiniProps> = ({ project }) => {
       intervalsByProject,
       manualRecordsByProject,
       addManualRecord,
-      set,
     },
   } = useDatabaseContext();
 
+  // Reference for the TimeSpent component to trigger its edit mode
+  const [isEditing, setIsEditing] = useState(false);
+
   const allIntervals = intervalsByProject[project] ?? [];
   const allManualRecords = manualRecordsByProject[project] ?? [];
+  const { startTs: todayStartTs, endTs: todayEndTs } = useToday();
 
-  const today = useMemo(() => getTodayRange(), []);
-
-  const intervalSecondsToday = useMemo(() => {
-    return getSecondsInRange(allIntervals, today.start, today.end);
-  }, [allIntervals, today]);
-
-  const manualSecondsToday = useMemo(() => {
-    return allManualRecords.reduce((total, record) => {
-      if (record.ts >= today.start && record.ts < today.end) {
-        return total + record.seconds;
-      }
-
-      return total;
+  const currentSeconds = useMemo(() => {
+    const intervalSeconds = getSecondsInRange(allIntervals, todayStartTs, todayEndTs);
+    const manualSeconds = allManualRecords.reduce((total, record) => {
+      return (record.ts >= todayStartTs && record.ts < todayEndTs) 
+        ? total + record.seconds 
+        : total;
     }, 0);
-  }, [allManualRecords, today]);
+    console.log('calculated currentSeconds: ' + intervalSeconds + manualSeconds);
+    return intervalSeconds + manualSeconds;
+    //return 557;
+  }, [allIntervals, allManualRecords, todayStartTs, todayEndTs]);
 
-  const currentSeconds = intervalSecondsToday + manualSecondsToday;
-
-  const formattedTime = formatPrettyTime(currentSeconds);
-
-  const timelineIntervals = useMemo(() => {
-    const timelineIntervals = allIntervals.map((interval, i) => ({
-      start: toTimeString(interval.start),
-      end: toTimeString(interval.end),
-      color: "#3B82F6", // or vary per interval if you want
+const timelineIntervals = useMemo(() => {
+  return allIntervals
+    .filter((interval) => interval.start >= todayStartTs && interval.end <= todayEndTs)
+    .map((interval) => ({
+      start: interval.start,
+      end: interval.end,
+      color: "#3B82F6",
     }));
-    return timelineIntervals;
-  }, [allIntervals]);
+}, [allIntervals, todayStartTs, todayEndTs]); // Make sure to add startTs and endTs to the dependency array
+
+  const handleManualTimeUpdate = (newTotalSeconds: number) => {
+    // Adds a manual record based on the new total provided by the modal
+    addManualRecord(project, Date.now(), newTotalSeconds);
+    setIsEditing(false);
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.timeRow}>
-        <Text style={styles.bankedTimeText}>{formattedTime.main}</Text>
-        <Text style={styles.secondsText}>{formattedTime.seconds}</Text>
+      {/* Header Row: Contains Centered Time and Absolute Icon */}
+      <View style={styles.headerRow}>
+        <Text>Dec 27, 2027</Text>
       </View>
+      <View style={styles.headerRow}>
+        <TimeSpent 
+          totalSeconds={currentSeconds} 
+          onSave={handleManualTimeUpdate}
+          isEditing={isEditing}
+          onClose={() => setIsEditing(false)}
+        />
+        
+        <TouchableOpacity 
+          style={styles.editIconBtn} 
+          onPress={() => setIsEditing(true)}
+        >
+          <MaterialIcons name="edit" size={22} color="#007bff" />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.dayIntervalsTimelineContainer}>
-        <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
+        <DayIntervalsTimeline startTimestampMs={todayStartTs} endTimestampMs={todayEndTs} intervals={timelineIntervals} height={18} />
       </View>
     </View>
   );
@@ -76,78 +86,30 @@ const CurrentBankMini: React.FC<CurrentBankMiniProps> = ({ project }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     width: "100%",
     padding: 15,
     borderWidth: 1,
     borderColor: "#a0d9b4",
     borderRadius: 10,
     backgroundColor: "#e6ffe6",
-
     alignItems: "center",
-    justifyContent: "flex-start", // 👈 key change
   },
-  timeRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    //backgroundColor:"cyan",
-  },
-  bankedTimeText: {
-    fontSize: 44,
-    fontWeight: "bold",
-    color: "#007bff",
-  },
-  secondsText: {
-    fontSize: 20,
-    color: "#6c757d",
-    marginLeft: 6,
+  headerRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Keeps TimeSpent centered
+    position: 'relative',
     marginBottom: 10,
   },
-  buttonWrapper: {
-    marginTop: 16,
-    width: "45%",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  editContainer: {
-    width: "100%",
-    alignItems: "center",
-  },
-  adjustRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 12,
-  },
-  editActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  header: {
-    width: "100%",
-    marginBottom: 8,
-  },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#495057",
-  },
-
-  headerSubtitle: {
-    fontSize: 16,
-    color: "#868e96",
-    marginTop: 2,
+  editIconBtn: {
+    position: 'absolute',
+    right: 0,
+    padding: 8,
   },
   dayIntervalsTimelineContainer: {
     width: "100%",
-    paddingLeft: 18,
-    paddingRight: 18,
+    paddingHorizontal: 18,
   },
 });
 

@@ -1,3 +1,5 @@
+import { TimeInterval } from "../components/DayIntervalsTimeline";
+
 export function formatTimeMilliseconds(totalMilliseconds: number): string {
   const totalSeconds = Math.floor(totalMilliseconds / 1000);
   return formatTime(totalSeconds);
@@ -61,4 +63,22 @@ export function toTimeString(ts: number){
   const h = d.getHours().toString().padStart(2, "0");
   const m = d.getMinutes().toString().padStart(2, "0");
   return `${h}:${m}`;
+};
+
+export function mapIntervalsToReadableTime(
+  intervals: Array<TimeInterval>
+): Array<{ start: string; end: string }> {
+  
+  const timeFormatter = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  return intervals.map(({ start, end }) => ({
+    start: timeFormatter.format(new Date(start)),
+    startTs: start,
+    end: timeFormatter.format(new Date(end)),
+    endTs: end,
+  }));
 };
