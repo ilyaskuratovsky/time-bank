@@ -15,6 +15,7 @@ import { useStopWatch } from "../database/useStopWatch";
 import * as Notifications from "expo-notifications";
 import nullthrows from "../utils/nullthrows";
 import { Ionicons } from "@expo/vector-icons";
+import { useDebug } from "../context/DebugContext";
 
 interface TimerProps {
   project: string;
@@ -233,6 +234,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
     return true;
   };
 
+  const { isDebugMode } = useDebug(); // <-- Consume the debug state here
   return (
     <View style={styles.container}>
       {/* Duration Selector */}
@@ -314,19 +316,21 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
           <Text style={styles.sideText}>Bank</Text>
         </Pressable>
       </View>
-      <TouchableOpacity
-        onPress={async () => {
-          await bankTimeInterval([
-            {
-              start: Date.now() - 15 * 60 * 1000,
-              end: Date.now(),
-            },
-          ]);
-        }}
-        style={{ marginTop: 30 }}
-      >
-        <Text>add 15</Text>
-      </TouchableOpacity>
+      {isDebugMode && (
+        <TouchableOpacity
+          onPress={async () => {
+            await bankTimeInterval([
+              {
+                start: Date.now() - 15 * 60 * 1000,
+                end: Date.now(),
+              },
+            ]);
+          }}
+          style={{ marginTop: 30 }}
+        >
+          <Text>add 15</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

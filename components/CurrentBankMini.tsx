@@ -58,9 +58,11 @@ const timelineIntervals = useMemo(() => {
   return (
     <View style={styles.container}>
       {/* Header Row: Contains Centered Time and Absolute Icon */}
+      {/*}
       <View style={styles.headerRow}>
         <Text>Dec 27, 2027</Text>
       </View>
+      */}
       <View style={styles.headerRow}>
         <TimeSpent 
           totalSeconds={currentSeconds} 

@@ -4,6 +4,7 @@ import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
 import { useToday } from "../context/TodayContext";
+import ActivityLog from "./ActivityLog";
 
 interface CurrentBankProps {
   project: string;
@@ -61,22 +62,15 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     [editingSeconds],
   );
 
-  const clearBankedTime = async () => {
-    await set(project, [], []);
-  };
-
-  const startEditing = () => {
-    setEditingSeconds(currentSeconds);
-    setEditingStartedAt(Date.now());
-    setIsEditing(true);
-  };
-
+  /*
   const cancelEditing = () => {
     setIsEditing(false);
     setEditingSeconds(currentSeconds);
     setEditingStartedAt(null);
   };
+  */
 
+  /*
   const saveEditing = async () => {
     if (editingStartedAt == null) return;
 
@@ -95,6 +89,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     setIsEditing(false);
     setEditingStartedAt(null);
   };
+  */
 
   const adjustSeconds = (delta: number) => {
     setEditingSeconds((prev) => Math.max(0, prev + delta));
@@ -114,20 +109,21 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>Today</Text>
-      </View>
-      <ScrollView>
+      <ScrollView style={styles.scrollContainer}>
         <View style={styles.timeRow}>
           <Text style={styles.bankedTimeText}>{display.main}</Text>
           <Text style={styles.secondsText}>{display.seconds}</Text>
         </View>
         <View style={styles.dayIntervalsTimelineContainer}>
-          <DayIntervalsTimeline startTimestampMs={todayStartTs} endTimestampMs={todayEndTs} intervals={timelineIntervals} height={18} />
+          <DayIntervalsTimeline
+            startTimestampMs={todayStartTs}
+            endTimestampMs={todayEndTs}
+            intervals={timelineIntervals}
+            height={18}
+          />
         </View>
 
-        {isEditing ? (
+        {/*isEditing ? (
           <View style={styles.editContainer}>
             <View style={styles.adjustRow}>
               <Button title="+1m" onPress={() => adjustSeconds(60)} />
@@ -143,14 +139,14 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
           </View>
         ) : (
           <View style={styles.buttonRow}>
-            <View style={styles.buttonWrapper}>
-              <Button title="Clear" onPress={clearBankedTime} color="#d9534f" />
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button title="Edit" onPress={startEditing} color="#007bff" />
-            </View>
           </View>
-        )}
+        )*/}
+        <ActivityLog
+          intervals={allIntervals.filter(
+            (interval) =>
+              interval.start >= todayStartTs && interval.start < todayEndTs,
+          )}
+        />
       </ScrollView>
     </View>
   );
@@ -165,9 +161,12 @@ const styles = StyleSheet.create({
     borderColor: "#a0d9b4",
     borderRadius: 10,
     backgroundColor: "#e6ffe6",
-
+    //backgroundColor: "cyan",
     alignItems: "center",
     justifyContent: "flex-start", // 👈 key change
+  },
+  scrollContainer: {
+    width: "100%",
   },
   timeRow: {
     flexDirection: "row",
@@ -230,6 +229,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingLeft: 18,
     paddingRight: 18,
+    width: "100%",
   },
 });
 
