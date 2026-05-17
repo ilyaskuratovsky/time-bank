@@ -5,7 +5,7 @@ import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
 import { TimeSpent } from "./TimeSpent";
-import { useToday } from "../database/context/TodayContext";
+import { useToday } from "../context/TodayContext";
 
 interface CurrentBankMiniProps {
   project: string;

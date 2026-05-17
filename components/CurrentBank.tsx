@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Button, ScrollView } from "react-native";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
+import { useToday } from "../context/TodayContext";
 
 interface CurrentBankProps {
   project: string;
@@ -109,6 +110,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     }));
     return timelineIntervals;
   }, [allIntervals]);
+  const { startTs: todayStartTs, endTs: todayEndTs } = useToday();
 
   return (
     <View style={styles.container}>
@@ -122,7 +124,7 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
           <Text style={styles.secondsText}>{display.seconds}</Text>
         </View>
         <View style={styles.dayIntervalsTimelineContainer}>
-          <DayIntervalsTimeline intervals={timelineIntervals} height={18} />
+          <DayIntervalsTimeline startTimestampMs={todayStartTs} endTimestampMs={todayEndTs} intervals={timelineIntervals} height={18} />
         </View>
 
         {isEditing ? (

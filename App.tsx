@@ -11,7 +11,9 @@ import Constants from "expo-constants";
 import Main from "./Main";
 import { DatabaseContextProvider } from "./database/DatabaseContext";
 import * as Notifications from "expo-notifications";
-import { TodayProvider } from "./database/context/TodayContext";
+import { TodayProvider } from "./context/TodayContext";
+import { DebugProvider } from "./context/DebugContext";
+import { DebugToggleButton } from "./components/DebugToggleButton";
 
 async function migrateDbIfNeeded(db: SQLiteDatabase) {
   const dbVersion = Number(Constants.expoConfig?.extra?.dbVersion ?? 1);
@@ -88,15 +90,21 @@ const App = () => {
 
   return (
     <SafeAreaProvider>
-      <TodayProvider>
-        <SQLiteProvider databaseName="bankedTimes.db" onInit={migrateDbIfNeeded}>
-          <DatabaseContextProvider>
-            <Main />
-          </DatabaseContextProvider>
-        </SQLiteProvider>
-      </TodayProvider>
+      <DebugProvider>
+        <TodayProvider>
+          <SQLiteProvider
+            databaseName="bankedTimes.db"
+            onInit={migrateDbIfNeeded}
+          >
+            <DatabaseContextProvider>
+              <Main />
+            </DatabaseContextProvider>
+          </SQLiteProvider>
+        </TodayProvider>
+        <DebugToggleButton />
+      </DebugProvider>
     </SafeAreaProvider>
-     );
+  );
 };
 
 export default App;

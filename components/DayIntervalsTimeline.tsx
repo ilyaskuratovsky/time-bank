@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { mapIntervalsToReadableTime } from "../utils/Utils";
+import { useDebug } from "../context/DebugContext";
 
 type TimeInput = number;
 
@@ -21,7 +22,7 @@ export type TimeInterval = {
 type Props = {
   intervals: TimeInterval[];
   startTimestampMs: number; // Absolute start of the logical day timeline (e.g. 3:00 AM)
-  endTimestampMs: number;   // Absolute end of the logical day timeline (e.g. 2:59:59 AM next day)
+  endTimestampMs: number; // Absolute end of the logical day timeline (e.g. 2:59:59 AM next day)
   height?: number;
   showHourLabels?: boolean;
   maxLabels?: number;
@@ -39,7 +40,11 @@ function clamp(value: number, min: number, max: number) {
 /**
  * Converts an absolute timestamp to its relative minute position along the custom logical timeline duration.
  */
-function toTimelineMinutes(timestamp: number, timelineStartMs: number, totalDurationMin: number): number {
+function toTimelineMinutes(
+  timestamp: number,
+  timelineStartMs: number,
+  totalDurationMin: number,
+): number {
   const diffMs = timestamp - timelineStartMs;
   const minutes = diffMs / 1000 / 60;
   return clamp(minutes, 0, totalDurationMin);
@@ -78,13 +83,21 @@ type NormalizedSegment = {
 function normalizeIntervals(
   intervals: TimeInterval[],
   timelineStartMs: number,
-  totalDurationMin: number
+  totalDurationMin: number,
 ): NormalizedSegment[] {
   const segments: NormalizedSegment[] = [];
 
   for (const interval of intervals) {
-    const startMin = toTimelineMinutes(interval.start, timelineStartMs, totalDurationMin);
-    const endMin = toTimelineMinutes(interval.end, timelineStartMs, totalDurationMin);
+    const startMin = toTimelineMinutes(
+      interval.start,
+      timelineStartMs,
+      totalDurationMin,
+    );
+    const endMin = toTimelineMinutes(
+      interval.end,
+      timelineStartMs,
+      totalDurationMin,
+    );
     const color = interval.color ?? "#4A90E2";
 
     if (startMin === endMin) continue;
@@ -122,30 +135,39 @@ export const DayIntervalsTimeline: React.FC<Props> = ({
 
   const segments = useMemo(
     () => normalizeIntervals(intervals, startTimestampMs, totalDurationMin),
-    [intervals, startTimestampMs, totalDurationMin]
+    [intervals, startTimestampMs, totalDurationMin],
   );
 
   const labelHours = useMemo(
-    () => getEvenlySpacedHours(Math.max(1, Math.min(maxLabels, 4)), startTimestampMs),
-    [maxLabels, startTimestampMs]
+    () =>
+      getEvenlySpacedHours(
+        Math.max(1, Math.min(maxLabels, 4)),
+        startTimestampMs,
+      ),
+    [maxLabels, startTimestampMs],
   );
 
   const handleTrackLayout = (event: LayoutChangeEvent) => {
     setTrackWidth(event.nativeEvent.layout.width);
   };
+  const { isDebugMode } = useDebug(); // <-- Consume the debug state here
 
   return (
     <>
-      <ScrollView horizontal={true} style={{}}>
-        <Text style={{ fontSize: 10, color: "#000000" }}>
-          {JSON.stringify(mapIntervalsToReadableTime(intervals))}
-        </Text>
-      </ScrollView>
-      <ScrollView horizontal={true} style={{}}>
-        <Text style={{ fontSize: 10, color: "#000000" }}>
-          {JSON.stringify(segments)}
-        </Text>
-      </ScrollView>
+      {isDebugMode && (
+        <>
+          <ScrollView horizontal={true} style={{}}>
+            <Text style={{ fontSize: 10, color: "#000000" }}>
+              {JSON.stringify(mapIntervalsToReadableTime(intervals))}
+            </Text>
+          </ScrollView>
+          <ScrollView horizontal={true} style={{}}>
+            <Text style={{ fontSize: 10, color: "#000000" }}>
+              {JSON.stringify(segments)}
+            </Text>
+          </ScrollView>
+        </>
+      )}
       <View style={[styles.container, style]}>
         <View
           style={[
