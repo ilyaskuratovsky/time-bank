@@ -1,9 +1,6 @@
-import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, Button, ScrollView } from "react-native";
-import { useDatabaseContext } from "../database/DatabaseContext";
-import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
-import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
-import { useToday } from "../context/TodayContext";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { toTimeString } from "../utils/Utils";
 import { Interval } from "../database/useTimeBankDatabase";
 
 // Unified log types
@@ -13,14 +10,16 @@ type LogItem =
       id: string;
       timestamp: number;
       duration: number;
-      details: string;
+      timeRangeText: string; // Combined start & end string
+      rawInterval: Interval;
+      index: number;
     }
   | {
       type: "manual";
       id: string;
       timestamp: number;
       duration: number;
-      details: string;
+      timeRangeText: string;
     };
 
 const formatPrettyTime = (totalSeconds: number) => {
@@ -36,14 +35,17 @@ const formatPrettyTime = (totalSeconds: number) => {
   };
 };
 
-/**
- * 1. Separate ActivityLog Component
- */
 interface ActivityLogProps {
   intervals: Interval[];
+  onEditInterval?: (index: number) => void;
+  onDeleteInterval?: (interval: Interval, index: number) => void;
 }
 
-const ActivityLog: React.FC<ActivityLogProps> = ({ intervals }) => {
+const ActivityLog: React.FC<ActivityLogProps> = ({
+  intervals,
+  onEditInterval,
+  onDeleteInterval,
+}) => {
   // Process automatic timeline intervals occurring today
   const logs: LogItem[] = [];
   intervals.forEach((interval, idx) => {
@@ -53,7 +55,9 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ intervals }) => {
       id: `auto-${idx}-${interval.start}`,
       timestamp: interval.start,
       duration: durationSec,
-      details: `Session: ${toTimeString(interval.start)} - ${toTimeString(interval.end)}`,
+      timeRangeText: `${toTimeString(interval.start)} - ${toTimeString(interval.end)}`,
+      rawInterval: interval,
+      index: idx,
     });
   });
 
@@ -67,16 +71,17 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ intervals }) => {
 
   return (
     <View style={logStyles.container}>
-      <Text style={logStyles.title}>Activity Log</Text>
-      {logs.map((item) => {
+      {logs.map((item, index) => {
         const isManual = item.type === "manual";
         const isNegative = item.duration < 0;
         const timeFormatted = formatPrettyTime(item.duration);
 
         return (
           <View key={item.id} style={logStyles.card}>
-            <View style={logStyles.cardRow}>
-              <View style={logStyles.badgeContainer}>
+            {/* Unified Single Info Row */}
+            <View style={logStyles.infoContainer}>
+              <View style={logStyles.metaGroup}>
+                {/*
                 <Text
                   style={[
                     logStyles.badge,
@@ -85,13 +90,12 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ intervals }) => {
                 >
                   {isManual ? "Manual" : "Auto"}
                 </Text>
-                <Text style={logStyles.timeLabel}>
-                  {new Date(item.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+              */}
+                <Text style={logStyles.timeRangeLabel}>
+                  {item.timeRangeText}
                 </Text>
               </View>
+
               <Text
                 style={[
                   logStyles.durationText,
@@ -102,7 +106,28 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ intervals }) => {
                 {timeFormatted.main} {timeFormatted.seconds}
               </Text>
             </View>
-            <Text style={logStyles.detailsText}>{item.details}</Text>
+
+            {/* Action Buttons */}
+            {item.type === "auto" && (
+              <View style={logStyles.actionColumn}>
+                <TouchableOpacity
+                  style={[logStyles.actionButton, logStyles.editButton]}
+                  onPress={() => onEditInterval?.(index)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={logStyles.actionButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[logStyles.actionButton, logStyles.deleteButton]}
+                  onPress={() =>
+                    onDeleteInterval?.(item.rawInterval, item.index)
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text style={logStyles.actionButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         );
       })}
@@ -113,7 +138,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ intervals }) => {
 const logStyles = StyleSheet.create({
   container: {
     width: "100%",
-    marginTop: 24,
+    marginTop: 0,
     borderTopWidth: 1,
     borderTopColor: "#cbd5e1",
     paddingTop: 16,
@@ -135,20 +160,25 @@ const logStyles = StyleSheet.create({
     fontStyle: "italic",
   },
   card: {
-    backgroundColor: "#ffffff",
+    //backgroundColor: "#ffffff",
     borderRadius: 8,
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 8,
-    borderWidth: 1,
+    //borderWidth: 1,
     borderColor: "#e2e8f0",
-  },
-  cardRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    justifyContent: "space-between",
   },
-  badgeContainer: {
+  infoContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingRight: 14,
+  },
+  metaGroup: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -169,12 +199,13 @@ const logStyles = StyleSheet.create({
     backgroundColor: "#fef3c7",
     color: "#92400e",
   },
-  timeLabel: {
-    fontSize: 12,
-    color: "#64748b",
+  timeRangeLabel: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: "#475569",
   },
   durationText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "600",
   },
   textPositive: {
@@ -183,9 +214,32 @@ const logStyles = StyleSheet.create({
   textNegative: {
     color: "#dc2626",
   },
-  detailsText: {
+  actionColumn: {
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "center",
+  },
+  actionButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  editButton: {
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+  },
+  deleteButton: {
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fca5a5",
+  },
+  actionButtonText: {
     fontSize: 12,
-    color: "#475569",
+    fontWeight: "600",
+    color: "#334155",
   },
 });
 

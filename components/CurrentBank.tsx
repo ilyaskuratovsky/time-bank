@@ -5,6 +5,7 @@ import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
 import { useToday } from "../context/TodayContext";
 import ActivityLog from "./ActivityLog";
+import EditTimeIntervalModal from "./EditTimeIntervalModal";
 
 interface CurrentBankProps {
   project: string;
@@ -31,10 +32,16 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
     },
   } = useDatabaseContext();
 
+  const today = useMemo(() => getTodayRange(), []);
   const allIntervals = intervalsByProject[project] ?? [];
+  const intervalsToday = useMemo(() => {
+    return allIntervals.filter(
+      (interval) =>
+        interval.start >= today.start && interval.start < today.end,
+    );
+  }, [allIntervals, today]);
   const allManualRecords = manualRecordsByProject[project] ?? [];
 
-  const today = useMemo(() => getTodayRange(), []);
 
   const intervalSecondsToday = useMemo(() => {
     return getSecondsInRange(allIntervals, today.start, today.end);
@@ -107,23 +114,38 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
   }, [allIntervals]);
   const { startTs: todayStartTs, endTs: todayEndTs } = useToday();
 
-  return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollContainer}>
-        <View style={styles.timeRow}>
-          <Text style={styles.bankedTimeText}>{display.main}</Text>
-          <Text style={styles.secondsText}>{display.seconds}</Text>
-        </View>
-        <View style={styles.dayIntervalsTimelineContainer}>
-          <DayIntervalsTimeline
-            startTimestampMs={todayStartTs}
-            endTimestampMs={todayEndTs}
-            intervals={timelineIntervals}
-            height={18}
-          />
-        </View>
+  const [isEditIntervalModalOpen, setIsEditIntervalModalOpen] = useState(false);
+  const [editingIntervalIndex, setEditingIntervalIndex] = useState<number | null>(null);
 
-        {/*isEditing ? (
+  const handleEditInterval = (index: number) => {
+    setEditingIntervalIndex(index);
+    setIsEditIntervalModalOpen(true);
+  };
+  const handleSaveIntervalChanges = (
+    updatedStart: number,
+    updatedEnd: number,
+  ) => {
+    setIsEditIntervalModalOpen(false);
+    setEditingIntervalIndex(null);
+  };
+  return (
+    <>
+      <View style={styles.container}>
+        <ScrollView style={styles.scrollContainer}>
+          <View style={styles.timeRow}>
+            <Text style={styles.bankedTimeText}>{display.main}</Text>
+            <Text style={styles.secondsText}>{display.seconds}</Text>
+          </View>
+          <View style={styles.dayIntervalsTimelineContainer}>
+            <DayIntervalsTimeline
+              startTimestampMs={todayStartTs}
+              endTimestampMs={todayEndTs}
+              intervals={timelineIntervals}
+              height={18}
+            />
+          </View>
+
+          {/*isEditing ? (
           <View style={styles.editContainer}>
             <View style={styles.adjustRow}>
               <Button title="+1m" onPress={() => adjustSeconds(60)} />
@@ -141,14 +163,22 @@ const CurrentBank: React.FC<CurrentBankProps> = ({ project }) => {
           <View style={styles.buttonRow}>
           </View>
         )*/}
-        <ActivityLog
-          intervals={allIntervals.filter(
-            (interval) =>
-              interval.start >= todayStartTs && interval.start < todayEndTs,
-          )}
-        />
-      </ScrollView>
-    </View>
+          <ActivityLog
+              intervals={intervalsToday}
+              onEditInterval={handleEditInterval}
+          />
+        </ScrollView>
+      </View>
+      <EditTimeIntervalModal
+        visible={isEditIntervalModalOpen}
+        interval={editingIntervalIndex !== null ? intervalsToday[editingIntervalIndex] : null}
+        onClose={() => {
+          setIsEditIntervalModalOpen(false);
+          setEditingIntervalIndex(null);
+        }}
+        onSave={handleSaveIntervalChanges}
+      />
+    </>
   );
 };
 
