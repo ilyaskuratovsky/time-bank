@@ -12,7 +12,11 @@ import Timer from "./Timer";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import ProjectSwitcherHeader from "./ProjectSwitcherHeader";
 
-const ProjectTimer: React.FC = () => {
+type ProjectTimerProps = {
+  onProjectChange: (projectId: string) => void; // Callback to update the active project
+};
+
+const ProjectTimer: React.FC<ProjectTimerProps> = ({ onProjectChange }) => {
   const insets = useSafeAreaInsets();
   const { timeBankDatabase } = useDatabaseContext();
 
@@ -23,8 +27,10 @@ const ProjectTimer: React.FC = () => {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  useEffect(() => {});
-
+  const handleProjectPress = (index: number) => {
+    setActiveIndex(index);
+    onProjectChange(projects[index].id);
+  };
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -32,7 +38,11 @@ const ProjectTimer: React.FC = () => {
         <ProjectSwitcherHeader
           projects={projects}
           activeIndex={activeIndex}
-          onChange={setActiveIndex}
+
+          onChange={(index) => {
+            setActiveIndex(index);
+            handleProjectPress(index); // Call handleProjectPress with the new index
+          }}
           onManageProjects={() => {}}
         />
       </View>

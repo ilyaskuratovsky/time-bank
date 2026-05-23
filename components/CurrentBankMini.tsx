@@ -22,7 +22,7 @@ const CurrentBankMini: React.FC<CurrentBankMiniProps> = ({ project }) => {
 
   // Reference for the TimeSpent component to trigger its edit mode
   const [isEditing, setIsEditing] = useState(false);
-
+  console.log('CurrentBankMini rendered for project:', project);
   const allIntervals = intervalsByProject[project] ?? [];
   const allManualRecords = manualRecordsByProject[project] ?? [];
   const { startTs: todayStartTs, endTs: todayEndTs } = useToday();

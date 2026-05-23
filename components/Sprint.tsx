@@ -25,7 +25,8 @@ const Sprint: React.FC = () => {
     { id: "Side Project", name: "Side Project" },
   ];
 
-  const [activeIndex] = useState(0);
+  const [activeProject, setActiveProject] = useState(projects[0].id); // Renamed and initialized with project ID
+  console.log('Sprint rendered with projects:', projects, 'activeProject:', activeProject);
   const [expanded, setExpanded] = useState(false);
 
   const animatedHeight = useRef(new Animated.Value(MIN_HEIGHT)).current;
@@ -49,10 +50,7 @@ const Sprint: React.FC = () => {
       }}
     >
       {/* Timer */}
-      <View style={styles.timerContainer}>
-        <ProjectTimer />
-      </View>
-
+      <ProjectTimer onProjectChange={(projectId) => setActiveProject(projectId)} />
       {/* Bottom Sheet */}
       <Animated.View style={[styles.bottomPanel, { height: animatedHeight }]}>
         {/* Handle / Toggle Area */}
@@ -62,9 +60,9 @@ const Sprint: React.FC = () => {
 
         {/* Content */}
         {expanded ? (
-          <CurrentBank project={projects[activeIndex].id} />
+          <CurrentBank project={activeProject} />
         ) : (
-          <CurrentBankMini project={projects[activeIndex].id} />
+          <CurrentBankMini project={activeProject} />
         )}
       </Animated.View>
     </View>
@@ -101,3 +99,4 @@ const styles = StyleSheet.create({
 });
 
 export default Sprint;
+
