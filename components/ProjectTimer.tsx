@@ -77,8 +77,10 @@ const styles = StyleSheet.create({
   },
 
   timerContainer: {
+    flex: 1, // Add this line to make the timer container take up remaining height
     width: "90%",
     marginTop: 0,
+    //backgroundColor:"cyan"
   },
 
   backdrop: {

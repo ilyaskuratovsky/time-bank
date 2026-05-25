@@ -26,7 +26,12 @@ const Sprint: React.FC = () => {
   ];
 
   const [activeProject, setActiveProject] = useState(projects[0].id); // Renamed and initialized with project ID
-  console.log('Sprint rendered with projects:', projects, 'activeProject:', activeProject);
+  console.log(
+    "Sprint rendered with projects:",
+    projects,
+    "activeProject:",
+    activeProject,
+  );
   const [expanded, setExpanded] = useState(false);
 
   const animatedHeight = useRef(new Animated.Value(MIN_HEIGHT)).current;
@@ -50,7 +55,11 @@ const Sprint: React.FC = () => {
       }}
     >
       {/* Timer */}
-      <ProjectTimer onProjectChange={(projectId) => setActiveProject(projectId)} />
+      <View style={styles.timerContainer}>
+        <ProjectTimer
+          onProjectChange={(projectId) => setActiveProject(projectId)}
+        />
+      </View>
       {/* Bottom Sheet */}
       <Animated.View style={[styles.bottomPanel, { height: animatedHeight }]}>
         {/* Handle / Toggle Area */}
@@ -72,12 +81,12 @@ const Sprint: React.FC = () => {
 const styles = StyleSheet.create({
   timerContainer: {
     width: "100%",
-    height: 360,
+    flex: 1,
+    //backgroundColor: "orange",
   },
-
   bottomPanel: {
     width: "100%",
-    position: "absolute",
+    //position: "absolute",
     bottom: 0,
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
@@ -99,4 +108,3 @@ const styles = StyleSheet.create({
 });
 
 export default Sprint;
-

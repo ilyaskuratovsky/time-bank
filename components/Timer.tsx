@@ -238,7 +238,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
   return (
     <View style={styles.container}>
       {/* Duration Selector */}
-      <View style={styles.durationContainer}>
+      <View style={[styles.durationContainer]}>
         {(Object.keys(DURATIONS) as DurationKey[]).map((key) => (
           <Pressable
             key={key}
@@ -278,7 +278,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
           onStop={handleStop}
         />
       </View>
-      <View style={styles.buttonRow}>
+      <View style={[styles.buttonRow]}>
         {/* Reset */}
         <Pressable onPress={handleClear} style={styles.resetButtonCircle}>
           <Ionicons name="trash-outline" size={20} color="#b0b5ba" />
@@ -337,7 +337,8 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    flex: 1, // Take all available vertical space
+    width: "100%", // Take all available horizontal space
     marginVertical: 4,
     padding: 0,
     //borderWidth: 1,
@@ -352,6 +353,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 10,
     paddingBottom: 4,
+    height: 72,
   },
 
   durationButton: {
@@ -417,9 +419,12 @@ const styles = StyleSheet.create({
     //backgroundColor:"cyan"
   },
   timerCircleContainer: {
+    flex: 1, // Take up all remaining vertical space
+    //width: "100%", // Take up all horizontal space
+    minHeight: 180,
     marginTop: 0,
-    alignItems: "center",
-    width: "100%",
+    alignItems: "center", // Keep TimerCircle content centered horizontally
+    justifyContent: "center", // Keep TimerCircle content centered vertically
     //backgroundColor:"pink"
   },
 
@@ -465,8 +470,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    width: "90%",
-    marginTop: 6,
+    width: "100%",
+    paddingHorizontal: 10,
+    //marginTop: 6,
+    //backgroundColor:"lightgray",
+    height: 72,
   },
 
   sideButton: {
@@ -531,3 +539,4 @@ const styles = StyleSheet.create({
 });
 
 export default Timer;
+
