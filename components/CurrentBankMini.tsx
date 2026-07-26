@@ -4,8 +4,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useDatabaseContext } from "../database/DatabaseContext";
 import { DayIntervalsTimeline } from "./DayIntervalsTimeline";
 import { getSecondsInRange, getTodayRange, toTimeString } from "../utils/Utils";
-import { TimeSpent } from "./TimeSpent";
+import { EditBankTime } from "./EditBankTime";
 import { useToday } from "../context/TodayContext";
+import { calculateTime } from "./TimeCalculator";
 
 interface CurrentBankMiniProps {
   project: string;
@@ -28,15 +29,8 @@ const CurrentBankMini: React.FC<CurrentBankMiniProps> = ({ project }) => {
   const { startTs: todayStartTs, endTs: todayEndTs } = useToday();
 
   const currentSeconds = useMemo(() => {
-    const intervalSeconds = getSecondsInRange(allIntervals, todayStartTs, todayEndTs);
-    const manualSeconds = allManualRecords.reduce((total, record) => {
-      return (record.ts >= todayStartTs && record.ts < todayEndTs) 
-        ? total + record.seconds 
-        : total;
-    }, 0);
-    console.log('calculated currentSeconds: ' + intervalSeconds + manualSeconds);
-    return intervalSeconds + manualSeconds;
-    //return 557;
+    // Use the new calculateTime function
+    return calculateTime(allIntervals, allManualRecords, todayStartTs, todayEndTs);
   }, [allIntervals, allManualRecords, todayStartTs, todayEndTs]);
 
 const timelineIntervals = useMemo(() => {
@@ -64,7 +58,7 @@ const timelineIntervals = useMemo(() => {
       </View>
       */}
       <View style={styles.headerRow}>
-        <TimeSpent 
+        <EditBankTime 
           totalSeconds={currentSeconds} 
           onSave={handleManualTimeUpdate}
           isEditing={isEditing}

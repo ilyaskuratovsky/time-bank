@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
-interface TimeSpentProps {
+interface EditBankTimeProps { // Renamed interface
   totalSeconds: number;
   isEditing: boolean;
   onSave: (val: number) => void;
   onClose: () => void;
 }
 
-export const TimeSpent: React.FC<TimeSpentProps> = ({
+export const EditBankTime: React.FC<EditBankTimeProps> = ({ // Renamed component
   totalSeconds,
   isEditing,
   onSave,
@@ -101,9 +101,6 @@ export const TimeSpent: React.FC<TimeSpentProps> = ({
     </View>
   );
 };
-
-// ... styles remain identical
-
 const styles = StyleSheet.create({
   timeRow: {
     flexDirection: "row",
