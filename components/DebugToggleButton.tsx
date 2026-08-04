@@ -22,7 +22,7 @@ export const DebugToggleButton: React.FC = () => {
 const styles = StyleSheet.create({
   button: {
     position: "absolute",
-    bottom: 24,
+    bottom: 42,
     right: 24,
     paddingVertical: 10,
     paddingHorizontal: 16,

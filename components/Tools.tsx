@@ -7,11 +7,13 @@ import { formatTime } from "../utils/Utils";
 const Tools: React.FC = () => {
   const insets = useSafeAreaInsets();
   const {
-    timeBankDatabase: { bankedTimes },
+    timeBankDatabase: {
+      intervalsByProject,
+      manualRecordsByProject,
+      addManualRecord,
+      set,
+    },
   } = useDatabaseContext();
-  const totalSeconds = bankedTimes["_"] ?? 0;
-
-  const keys = Object.keys(bankedTimes);
 
   return (
     <ScrollView
@@ -19,27 +21,6 @@ const Tools: React.FC = () => {
       contentContainerStyle={{ paddingBottom: 20 }}
     >
       <Text style={styles.heading}>Tools</Text>
-      <View style={styles.statRow}>
-        <Text style={styles.label}>Current banked time:</Text>
-        <Text style={styles.value}>{formatTime(totalSeconds)}</Text>
-      </View>
-      <View style={styles.statRow}>
-        <Text style={styles.label}>Raw seconds:</Text>
-        <Text style={styles.value}>{totalSeconds}</Text>
-      </View>
-      <Text style={styles.subheading}>All entries</Text>
-      {keys.length === 0 ? (
-        <Text style={styles.noData}>No entries yet.</Text>
-      ) : (
-        keys.map((key) => (
-          <View style={styles.entry} key={key}>
-            <Text style={styles.entryKey}>{key}</Text>
-            <Text style={styles.entryValue}>
-              {formatTime(bankedTimes[key])}
-            </Text>
-          </View>
-        ))
-      )}
     </ScrollView>
   );
 };

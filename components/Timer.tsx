@@ -9,13 +9,14 @@ import {
   AppState,
   TouchableOpacity,
 } from "react-native";
-import { formatTimeMilliseconds } from "../utils/Utils";
+import { formatTimeMilliseconds, mapIntervalsToReadableTime, mapIntervalsToReadableTimeStr } from "../utils/Utils";
 import TimerCircle from "./TimerCircle";
 import { useStopWatch } from "../database/useStopWatch";
 import * as Notifications from "expo-notifications";
 import nullthrows from "../utils/nullthrows";
 import { Ionicons } from "@expo/vector-icons";
 import { useDebug } from "../context/DebugContext";
+import logger from "../utils/Logger";
 
 interface TimerProps {
   project: string;
@@ -43,8 +44,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
     state: stopWatchState,
     intervals,
   } = useStopWatch(project);
-  //console.log("Timer component ", intervals);
-
+ 
   const [selectedDuration, setSelectedDuration] = useState<DurationKey>("15m");
   const notificationIdRef = useRef<string | null>(null);
 
@@ -110,7 +110,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
 
   const onTimerFinished = async () => {
     if (appState.current === "active") {
-      console.log("timer done, vibrating");
+      logger.log("Timer finished while app is in foreground");
       Vibration.vibrate(2000);
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -156,7 +156,7 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
   };
 
   const handleStart = async (): Promise<void> => {
-    console.log("handle start");
+    logger.log("Timer.handleStart, stopWatchTime: " + stopWatchTime + ", intervals: " + mapIntervalsToReadableTimeStr(intervals));
     startStopWatch();
     await cancelTimerNotification();
     if (!isInfinity) {
@@ -168,14 +168,14 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
     }
   };
   const handleStop = async (): Promise<void> => {
-    console.log("handle stop");
+    logger.log("Timer.handleStop, stopWatchTime: " + stopWatchTime + ", intervals: " + mapIntervalsToReadableTimeStr(intervals));
     stopStopWatch();
     setTimerWaitingToFinish(false);
     await cancelTimerNotification();
   };
 
   const handleBankTimeInterval = async (): Promise<void> => {
-    console.log("handle bank time interval");
+    logger.log("Timer.tsx:handleBankTimeInterval: intervals: " + mapIntervalsToReadableTimeStr(intervals));
 
     await cancelTimerNotification();
 
@@ -201,9 +201,6 @@ const Timer: React.FC<TimerProps> = ({ project, bankTimeInterval }) => {
     if (intervalsToBank.length === 0) {
       return;
     }
-
-    console.log("Banking intervals: ", intervalsToBank);
-
     await bankTimeInterval(intervalsToBank);
 
     setTimerWaitingToFinish(false);

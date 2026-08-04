@@ -8,9 +8,11 @@ import logger from "../utils/Logger";
 const Tools: React.FC = () => {
   const [clearVisible, setClearVisible] = useState(false);
   const insets = useSafeAreaInsets();
+  const [refresh, setRefresh] = useState(false);
 
   const clearLog = () => {
     logger.clear();
+    setRefresh(prev => !prev); // Toggle refresh state to force re-render
   };
 
   return (
@@ -22,7 +24,7 @@ const Tools: React.FC = () => {
       {logger.log.length === 0 ? (
         <Text style={styles.noData}>No log entries yet.</Text>
       ) : (
-        logger.log.reverse().map((entry, index) => (
+        logger.getLog().map((entry, index) => (
           <View style={styles.entry} key={index}>
             <Text style={styles.entryKey}>{entry}</Text>
           </View>

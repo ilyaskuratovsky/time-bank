@@ -65,7 +65,13 @@ export function toTimeString(ts: number){
   return `${h}:${m}`;
 };
 
-export function mapIntervalsToReadableTime(
+export function mapIntervalsToReadableTimeStr(
+  intervals: Array<TimeInterval>
+): string {
+  return JSON.stringify(mapIntervalsToReadableTime(intervals));
+}
+
+  export function mapIntervalsToReadableTime(
   intervals: Array<TimeInterval>
 ): Array<{ start: string; end: string }> {
   
@@ -73,6 +79,7 @@ export function mapIntervalsToReadableTime(
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+    second: '2-digit',
   });
 
   return intervals.map(({ start, end }) => ({
@@ -82,3 +89,5 @@ export function mapIntervalsToReadableTime(
     endTs: end,
   }));
 };
+
+

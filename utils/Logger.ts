@@ -1,15 +1,19 @@
 class Logger {
-  public log: string[] = [];
+  private logInternal: string[] = [];
 
-  public logMessage(message: string): void {
-    this.log.push(`[${new Date().toISOString()}] ${message}`);
+  public log(message: string): void {
+    this.logInternal.push(`[${new Date().toISOString()}] ${message}`);
   }
 
   public printLog(): void {
-    console.log(this.log.join("\n"));
+    console.log(this.logInternal.join("\n"));
   }
   public clear(): void {
-    this.log = [];
+    this.logInternal = [];
+  }
+
+  public getLog(): string[] {
+    return this.logInternal;
   }
 }
 
